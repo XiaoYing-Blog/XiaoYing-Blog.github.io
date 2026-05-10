@@ -1,0 +1,530 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>L20-推理优化 | XiaoYing-Blog🐈</title><meta name="author" content="XiaoYing"><meta name="copyright" content="XiaoYing"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="L20 - 推理优化 “又快又好地生成”   本节目标 理解自回归生成的瓶颈 掌握 KV-Cache 的原理与实现 理解 YaRN 长度外推技术 掌握各种生成策略：Greedy、Top-K、Top-P、Temperature 了解 FlashAttention 和模型量化的基本概念   前置知识 L04 Attention 机制的 Q&#x2F;K&#x2F;V 计算 L05 RoPE 位置编码">
+<meta property="og:type" content="article">
+<meta property="og:title" content="L20-推理优化">
+<meta property="og:url" content="http://example.com/2026/05/09/L20-%E6%8E%A8%E7%90%86%E4%BC%98%E5%8C%96/index.html">
+<meta property="og:site_name" content="XiaoYing-Blog🐈">
+<meta property="og:description" content="L20 - 推理优化 “又快又好地生成”   本节目标 理解自回归生成的瓶颈 掌握 KV-Cache 的原理与实现 理解 YaRN 长度外推技术 掌握各种生成策略：Greedy、Top-K、Top-P、Temperature 了解 FlashAttention 和模型量化的基本概念   前置知识 L04 Attention 机制的 Q&#x2F;K&#x2F;V 计算 L05 RoPE 位置编码">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/img/icon.png">
+<meta property="article:published_time" content="2026-05-08T16:00:00.000Z">
+<meta property="article:modified_time" content="2026-05-10T05:41:45.633Z">
+<meta property="article:author" content="XiaoYing">
+<meta property="article:tag" content="学习笔记">
+<meta property="article:tag" content="推理优化">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/img/icon.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "L20-推理优化",
+  "url": "http://example.com/2026/05/09/L20-%E6%8E%A8%E7%90%86%E4%BC%98%E5%8C%96/",
+  "image": "http://example.com/img/icon.png",
+  "datePublished": "2026-05-08T16:00:00.000Z",
+  "dateModified": "2026-05-10T05:41:45.633Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "XiaoYing",
+      "url": "http://example.com"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="http://example.com/2026/05/09/L20-%E6%8E%A8%E7%90%86%E4%BC%98%E5%8C%96/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.4"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":false,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'L20-推理优化',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/custom.css"><meta name="generator" content="Hexo 8.1.2"></head><body><div class="bg-animation" id="web_bg" style="background-image: url(/img/avg.jpg);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/loading.gif" data-original="/img/icon.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">22</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">35</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">2</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><span class="site-page group hide"><i class="fa-fw fa fa-list"></i><span> 列表</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/music/"><i class="fa-fw fas fa-music"></i><span> 音乐</span></a></li><li><a class="site-page child" href="/picture/"><i class="fa-fw fas fa-images"></i><span> 照片</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 电影</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/comments/"><i class="fa-fw fas fa-envelope-open"></i><span> 留言板</span></a></div><div class="menus_item"><a class="site-page" href="/link"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-color: rgba(0, 0, 0, 0);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">XiaoYing-Blog🐈</span></a><a class="nav-page-title" href="/"><span class="site-name">L20-推理优化</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><span class="site-page group hide"><i class="fa-fw fa fa-list"></i><span> 列表</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/music/"><i class="fa-fw fas fa-music"></i><span> 音乐</span></a></li><li><a class="site-page child" href="/picture/"><i class="fa-fw fas fa-images"></i><span> 照片</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 电影</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/comments/"><i class="fa-fw fas fa-envelope-open"></i><span> 留言板</span></a></div><div class="menus_item"><a class="site-page" href="/link"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">L20-推理优化</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-05-08T16:00:00.000Z" title="发表于 2026-05-09 00:00:00">2026-05-09</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-05-10T05:41:45.633Z" title="更新于 2026-05-10 13:41:45">2026-05-10</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E5%A4%A7%E6%A8%A1%E5%9E%8B%E5%AD%A6%E4%B9%A0/">大模型学习</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">3.7k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>14分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h1 id="L20-推理优化"><a href="#L20-推理优化" class="headerlink" title="L20 - 推理优化"></a>L20 - 推理优化</h1><blockquote>
+<p><strong>“又快又好地生成”</strong></p>
+</blockquote>
+<hr>
+<h2 id="本节目标"><a href="#本节目标" class="headerlink" title="本节目标"></a>本节目标</h2><ol>
+<li>理解自回归生成的瓶颈</li>
+<li>掌握 KV-Cache 的原理与实现</li>
+<li>理解 YaRN 长度外推技术</li>
+<li>掌握各种生成策略：Greedy、Top-K、Top-P、Temperature</li>
+<li>了解 FlashAttention 和模型量化的基本概念</li>
+</ol>
+<hr>
+<h2 id="前置知识"><a href="#前置知识" class="headerlink" title="前置知识"></a>前置知识</h2><ul>
+<li>L04 Attention 机制的 Q&#x2F;K&#x2F;V 计算</li>
+<li>L05 RoPE 位置编码</li>
+<li>L06 完整 Transformer 前向传播流程</li>
+<li>概率分布、采样的基本概念</li>
+</ul>
+<hr>
+<h2 id="一、自回归生成的瓶颈"><a href="#一、自回归生成的瓶颈" class="headerlink" title="一、自回归生成的瓶颈"></a>一、自回归生成的瓶颈</h2><h3 id="1-1-自回归生成是怎么工作的"><a href="#1-1-自回归生成是怎么工作的" class="headerlink" title="1.1 自回归生成是怎么工作的"></a>1.1 自回归生成是怎么工作的</h3><p>LLM 生成文本是一个 <strong>token-by-token</strong> 的过程：</p>
+<pre><code class="highlight plaintext">Step 1: &quot;今天&quot;          → 模型预测下一个 token → &quot;天气&quot;
+Step 2: &quot;今天天气&quot;       → 模型预测下一个 token → &quot;真&quot;
+Step 3: &quot;今天天气真&quot;     → 模型预测下一个 token → &quot;好&quot;
+...</code></pre>
+
+<p>每生成一个 token，模型都需要做一次<strong>完整的前向传播</strong>（从 Embedding 到最后的 LM Head）。</p>
+<h3 id="1-2-瓶颈分析"><a href="#1-2-瓶颈分析" class="headerlink" title="1.2 瓶颈分析"></a>1.2 瓶颈分析</h3><p>假设要生成 100 个 token：</p>
+<p><strong>朴素方式（无优化）</strong>：</p>
+<pre><code class="highlight plaintext">Step 1: 计算 &quot;今天&quot; 的 Q, K, V → Attention → FFN → 输出 &quot;天气&quot;
+Step 2: 计算 &quot;今天天气&quot; 的 Q, K, V → Attention → FFN → 输出 &quot;真&quot;
+Step 3: 计算 &quot;今天天气真&quot; 的 Q, K, V → Attention → FFN → 输出 &quot;好&quot;</code></pre>
+
+<p>在 Step 3 中，”今天” 和 “天气” 的 K、V 在 Step 1 和 Step 2 中已经算过了，但朴素方式又重新算了一遍！</p>
+<p><strong>重复计算量</strong>：生成第 ( n ) 个 token 时，前 ( n-1 ) 个 token 的 K&#x2F;V 被重复计算。总的重复计算量与 ( n^2 ) 成正比。</p>
+<hr>
+<h2 id="二、KV-Cache-详解"><a href="#二、KV-Cache-详解" class="headerlink" title="二、KV-Cache 详解"></a>二、KV-Cache 详解</h2><h3 id="2-1-核心思想"><a href="#2-1-核心思想" class="headerlink" title="2.1 核心思想"></a>2.1 核心思想</h3><p>KV-Cache 的思想非常简单：<strong>把已经计算过的 K 和 V 缓存起来，下次直接用</strong>。</p>
+<pre><code class="highlight plaintext">Step 1: 计算 K₁, V₁（&quot;今天&quot;）→ 缓存 [K₁], [V₁]
+Step 2: 计算 K₂, V₂（&quot;天气&quot;）→ 缓存 [K₁,K₂], [V₁,V₂]
+Step 3: 只计算 K₃, V₃（&quot;真&quot;）→ 缓存 [K₁,K₂,K₃], [V₁,V₂,V₃]</code></pre>
+
+<p>每次前向传播时：</p>
+<ul>
+<li><strong>Q</strong>：只计算当前新 token 的 Query</li>
+<li><strong>K, V</strong>：只计算当前新 token 的 Key 和 Value，然后和缓存的历史 K&#x2F;V 拼接</li>
+</ul>
+<h3 id="2-2-为什么只缓存-K-和-V，不缓存-Q？"><a href="#2-2-为什么只缓存-K-和-V，不缓存-Q？" class="headerlink" title="2.2 为什么只缓存 K 和 V，不缓存 Q？"></a>2.2 为什么只缓存 K 和 V，不缓存 Q？</h3><p>在 Attention 计算中：</p>
+<p>[<br>\text{Attention}(Q, K, V) &#x3D; \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V<br>]</p>
+<ul>
+<li><strong>Q</strong> 是当前 token 的查询，每次生成的 token 不同，Q 必须重新计算</li>
+<li><strong>K</strong> 是所有历史 token 的键，历史部分不会变，可以缓存</li>
+<li><strong>V</strong> 是所有历史 token 的值，同理可以缓存</li>
+</ul>
+<h3 id="2-3-KV-Cache-的实现"><a href="#2-3-KV-Cache-的实现" class="headerlink" title="2.3 KV-Cache 的实现"></a>2.3 KV-Cache 的实现</h3><p>MiniMind 中的 KV-Cache 实现核心逻辑：</p>
+<pre><code class="highlight python"><span class="keyword">class</span> <span class="title class_">Attention</span>(nn.Module):
+    <span class="keyword">def</span> <span class="title function_">forward</span>(<span class="params">self, x, pos, kv_cache=<span class="literal">None</span></span>):
+        B, T, D = x.shape
+
+        <span class="comment"># 计算当前 token 的 Q, K, V</span>
+        q = <span class="variable language_">self</span>.wq(x)  <span class="comment"># [B, T, D]</span>
+        k = <span class="variable language_">self</span>.wk(x)  <span class="comment"># [B, T, D_kv]</span>
+        v = <span class="variable language_">self</span>.wv(x)  <span class="comment"># [B, T, D_kv]</span>
+
+        <span class="comment"># 应用 RoPE</span>
+        q, k = apply_rope(q, k, pos)
+
+        <span class="keyword">if</span> kv_cache <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:
+            <span class="comment"># 拼接历史缓存</span>
+            cached_k, cached_v = kv_cache
+            k = torch.cat([cached_k, k], dim=<span class="number">1</span>)  <span class="comment"># [B, T_total, D_kv]</span>
+            v = torch.cat([cached_v, v], dim=<span class="number">1</span>)  <span class="comment"># [B, T_total, D_kv]</span>
+
+        <span class="comment"># 更新缓存</span>
+        new_kv_cache = (k, v)
+
+        <span class="comment"># GQA: 扩展 K/V 的 head 数量</span>
+        k = repeat_kv(k, <span class="variable language_">self</span>.n_rep)
+        v = repeat_kv(v, <span class="variable language_">self</span>.n_rep)
+
+        <span class="comment"># Attention 计算</span>
+        <span class="comment"># Q 只有当前 token: [B, n_heads, 1, d_head]</span>
+        <span class="comment"># K/V 包含所有历史: [B, n_heads, T_total, d_head]</span>
+        scores = torch.matmul(q, k.transpose(-<span class="number">2</span>, -<span class="number">1</span>)) / math.sqrt(<span class="variable language_">self</span>.d_head)
+        attn = F.softmax(scores, dim=-<span class="number">1</span>)
+        output = torch.matmul(attn, v)
+
+        <span class="keyword">return</span> output, new_kv_cache</code></pre>
+
+<h3 id="2-4-训练时不需要-KV-Cache"><a href="#2-4-训练时不需要-KV-Cache" class="headerlink" title="2.4 训练时不需要 KV-Cache"></a>2.4 训练时不需要 KV-Cache</h3><p><strong>训练时</strong>：整个序列一次性输入，所有 token 并行计算 Attention，不存在重复计算的问题。因此训练时<strong>不需要</strong>也<strong>不应该</strong>使用 KV-Cache。</p>
+<p><strong>推理时</strong>：逐 token 生成，需要用 KV-Cache 避免重复计算。</p>
+<p>这是一个常见的面试考点！</p>
+<h3 id="2-5-KV-Cache-的内存开销"><a href="#2-5-KV-Cache-的内存开销" class="headerlink" title="2.5 KV-Cache 的内存开销"></a>2.5 KV-Cache 的内存开销</h3><p>KV-Cache 用空间换时间，内存开销计算如下：</p>
+<pre><code class="highlight plaintext">每层 KV-Cache 大小 = 2 × batch_size × seq_len × kv_heads × head_dim × dtype_size
+
+对于 MiniMind (假设):
+  - 层数: 8
+  - kv_heads: 2 (GQA)
+  - head_dim: 64
+  - seq_len: 32768
+  - batch_size: 1
+  - dtype: float16 (2 bytes)
+
+  每层: 2 × 1 × 32768 × 2 × 64 × 2 = 16MB
+  总共: 8 × 16MB = 128MB</code></pre>
+
+<p>对于大模型（如 70B），KV-Cache 可能占用数十 GB 的显存，成为推理的显存瓶颈。</p>
+<h3 id="2-6-KV-Cache-的优化技术"><a href="#2-6-KV-Cache-的优化技术" class="headerlink" title="2.6 KV-Cache 的优化技术"></a>2.6 KV-Cache 的优化技术</h3><ul>
+<li><strong>GQA（Grouped Query Attention）</strong>：减少 KV heads 数量，直接减小 KV-Cache</li>
+<li><strong>MQA（Multi-Query Attention）</strong>：极端情况，只有 1 个 KV head</li>
+<li><strong>Paged KV-Cache</strong>（vLLM 使用）：像操作系统的虚拟内存一样管理 KV-Cache</li>
+<li><strong>量化 KV-Cache</strong>：用 INT8&#x2F;INT4 存储 K&#x2F;V</li>
+</ul>
+<hr>
+<h2 id="三、YaRN-长度外推"><a href="#三、YaRN-长度外推" class="headerlink" title="三、YaRN 长度外推"></a>三、YaRN 长度外推</h2><h3 id="3-1-问题背景"><a href="#3-1-问题背景" class="headerlink" title="3.1 问题背景"></a>3.1 问题背景</h3><p>MiniMind 训练时的最大序列长度（max_pos）是 32768。但如果用户输入了更长的文本怎么办？</p>
+<p><strong>朴素的 RoPE 不支持外推</strong>：如果位置编号超过训练时见过的范围，RoPE 的旋转角度会出现训练时没见过的模式，导致 Attention 分数紊乱，输出质量急剧下降。</p>
+<h3 id="3-2-YaRN-的基本思想"><a href="#3-2-YaRN-的基本思想" class="headerlink" title="3.2 YaRN 的基本思想"></a>3.2 YaRN 的基本思想</h3><p>YaRN（Yet another RoPE extensioN）是一种 RoPE 的长度外推方法，核心思想是<strong>对旋转频率进行缩放</strong>，使得更长的序列也能映射到训练时见过的旋转角度范围。</p>
+<p>传统 RoPE 的频率：</p>
+<p>[<br>\theta_i &#x3D; 10000^{-2i&#x2F;d}<br>]</p>
+<p>YaRN 对频率做缩放：</p>
+<p>[<br>\theta_i’ &#x3D; \frac{\theta_i}{s(i)}<br>]</p>
+<p>其中 ( s(i) ) 是一个与维度位置 ( i ) 相关的缩放因子。YaRN 的关键贡献是将频率分为三个区域：</p>
+<ol>
+<li><strong>高频分量</strong>（变化快的维度）：不缩放（保持局部位置精度）</li>
+<li><strong>低频分量</strong>（变化慢的维度）：线性缩放（扩展长距离位置感知）</li>
+<li><strong>中间频率</strong>：平滑插值过渡</li>
+</ol>
+<h3 id="3-3-缩放效果"><a href="#3-3-缩放效果" class="headerlink" title="3.3 缩放效果"></a>3.3 缩放效果</h3><p>MiniMind 支持通过 YaRN 在推理时将上下文长度从 32768 扩展到：</p>
+<p>[<br>32768 \times 16 &#x3D; 524288 \approx 512K \text{ tokens}<br>]</p>
+<p>这意味着推理时可以处理远超训练长度的输入，虽然效果可能不如在该长度上训练过的模型。</p>
+<h3 id="3-4-MiniMind-中的-YaRN-实现"><a href="#3-4-MiniMind-中的-YaRN-实现" class="headerlink" title="3.4 MiniMind 中的 YaRN 实现"></a>3.4 MiniMind 中的 YaRN 实现</h3><pre><code class="highlight python"><span class="keyword">def</span> <span class="title function_">precompute_freqs_cis</span>(<span class="params">dim, end, theta=<span class="number">10000.0</span>, scaling_factor=<span class="number">1.0</span></span>):
+    <span class="string">&quot;&quot;&quot;预计算 RoPE 的频率，支持 YaRN 缩放&quot;&quot;&quot;</span>
+    freqs = <span class="number">1.0</span> / (theta ** (torch.arange(<span class="number">0</span>, dim, <span class="number">2</span>).<span class="built_in">float</span>() / dim))
+
+    <span class="keyword">if</span> scaling_factor != <span class="number">1.0</span>:
+        <span class="comment"># YaRN 风格的频率缩放</span>
+        low_freq_factor = <span class="number">1.0</span>
+        high_freq_factor = <span class="number">4.0</span>
+        old_context_len = end
+
+        low_freq_wavelen = old_context_len / low_freq_factor
+        high_freq_wavelen = old_context_len / high_freq_factor
+
+        new_freqs = []
+        <span class="keyword">for</span> freq <span class="keyword">in</span> freqs:
+            wavelen = <span class="number">2</span> * math.pi / freq
+            <span class="keyword">if</span> wavelen &lt; high_freq_wavelen:
+                <span class="comment"># 高频：不缩放</span>
+                new_freqs.append(freq)
+            <span class="keyword">elif</span> wavelen &gt; low_freq_wavelen:
+                <span class="comment"># 低频：线性缩放</span>
+                new_freqs.append(freq / scaling_factor)
+            <span class="keyword">else</span>:
+                <span class="comment"># 中间频率：插值</span>
+                smooth = (old_context_len / wavelen - low_freq_factor) / \
+                         (high_freq_factor - low_freq_factor)
+                new_freqs.append((<span class="number">1</span> - smooth) * freq / scaling_factor + smooth * freq)
+        freqs = torch.tensor(new_freqs)
+
+    t = torch.arange(end)
+    freqs = torch.outer(t, freqs)
+    <span class="keyword">return</span> torch.polar(torch.ones_like(freqs), freqs)</code></pre>
+
+<hr>
+<h2 id="四、生成策略"><a href="#四、生成策略" class="headerlink" title="四、生成策略"></a>四、生成策略</h2><h3 id="4-1-贪心搜索（Greedy-Search）"><a href="#4-1-贪心搜索（Greedy-Search）" class="headerlink" title="4.1 贪心搜索（Greedy Search）"></a>4.1 贪心搜索（Greedy Search）</h3><p>每一步选择概率最高的 token：</p>
+<pre><code class="highlight python"><span class="keyword">def</span> <span class="title function_">greedy_search</span>(<span class="params">logits</span>):
+    <span class="keyword">return</span> logits.argmax(dim=-<span class="number">1</span>)</code></pre>
+
+<p><strong>特点</strong>：确定性输出，速度最快，但容易陷入重复、缺乏多样性。</p>
+<h3 id="4-2-Temperature-参数"><a href="#4-2-Temperature-参数" class="headerlink" title="4.2 Temperature 参数"></a>4.2 Temperature 参数</h3><p>Temperature 控制输出概率分布的”锐利程度”：</p>
+<p>[<br>p_i &#x3D; \frac{\exp(z_i &#x2F; T)}{\sum_j \exp(z_j &#x2F; T)}<br>]</p>
+<ul>
+<li><strong>T &lt; 1</strong>：分布更”尖锐”，高概率 token 更突出，输出更确定</li>
+<li><strong>T &#x3D; 1</strong>：原始分布</li>
+<li><strong>T &gt; 1</strong>：分布更”平坦”，低概率 token 有更多机会，输出更多样</li>
+</ul>
+<pre><code class="highlight python"><span class="keyword">def</span> <span class="title function_">apply_temperature</span>(<span class="params">logits, temperature=<span class="number">1.0</span></span>):
+    <span class="keyword">return</span> logits / temperature</code></pre>
+
+<p><strong>直觉理解</strong>：Temperature 就像调节”创造力”的旋钮。T&#x3D;0.1 写公文，T&#x3D;1.0 聊天，T&#x3D;1.5 写诗。</p>
+<h3 id="4-3-Top-K-采样"><a href="#4-3-Top-K-采样" class="headerlink" title="4.3 Top-K 采样"></a>4.3 Top-K 采样</h3><p>只从概率最高的 K 个 token 中采样：</p>
+<pre><code class="highlight python"><span class="keyword">def</span> <span class="title function_">top_k_sampling</span>(<span class="params">logits, k=<span class="number">50</span></span>):
+    values, indices = torch.topk(logits, k)
+    <span class="comment"># 将非 Top-K 的 token 概率设为 -inf</span>
+    logits[logits &lt; values[:, -<span class="number">1</span>:]] = <span class="built_in">float</span>(<span class="string">&#x27;-inf&#x27;</span>)
+    probs = F.softmax(logits, dim=-<span class="number">1</span>)
+    <span class="keyword">return</span> torch.multinomial(probs, num_samples=<span class="number">1</span>)</code></pre>
+
+<p><strong>问题</strong>：K 是固定的。有时候模型非常确定下一个 token（只有 2-3 个合理选择），K&#x3D;50 会引入太多噪声；有时候模型不确定（10-20 个 token 都合理），K&#x3D;50 可能仍然不够。</p>
+<h3 id="4-4-Top-P（Nucleus-Sampling）"><a href="#4-4-Top-P（Nucleus-Sampling）" class="headerlink" title="4.4 Top-P（Nucleus Sampling）"></a>4.4 Top-P（Nucleus Sampling）</h3><p>动态选择最小的 token 集合，使得累积概率达到 P：</p>
+<pre><code class="highlight python"><span class="keyword">def</span> <span class="title function_">top_p_sampling</span>(<span class="params">logits, p=<span class="number">0.9</span></span>):
+    sorted_logits, sorted_indices = torch.sort(logits, descending=<span class="literal">True</span>)
+    cumulative_probs = torch.cumsum(F.softmax(sorted_logits, dim=-<span class="number">1</span>), dim=-<span class="number">1</span>)
+
+    <span class="comment"># 找到累积概率超过 p 的位置</span>
+    sorted_indices_to_remove = cumulative_probs &gt; p
+    <span class="comment"># 保留第一个超过 p 的 token（确保至少有一个）</span>
+    sorted_indices_to_remove[:, <span class="number">1</span>:] = sorted_indices_to_remove[:, :-<span class="number">1</span>].clone()
+    sorted_indices_to_remove[:, <span class="number">0</span>] = <span class="literal">False</span>
+
+    <span class="comment"># 将被移除的 token 概率设为 -inf</span>
+    indices_to_remove = sorted_indices_to_remove.scatter(
+        <span class="number">1</span>, sorted_indices, sorted_indices_to_remove
+    )
+    logits[indices_to_remove] = <span class="built_in">float</span>(<span class="string">&#x27;-inf&#x27;</span>)
+
+    probs = F.softmax(logits, dim=-<span class="number">1</span>)
+    <span class="keyword">return</span> torch.multinomial(probs, num_samples=<span class="number">1</span>)</code></pre>
+
+<p><strong>优势</strong>：自适应——当模型确定时只选少数 token，不确定时选更多 token。</p>
+<h3 id="4-5-Top-K-vs-Top-P"><a href="#4-5-Top-K-vs-Top-P" class="headerlink" title="4.5 Top-K vs Top-P"></a>4.5 Top-K vs Top-P</h3><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>Top-K</th>
+<th>Top-P</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>候选数量</td>
+<td>固定 K 个</td>
+<td>动态，取决于概率分布</td>
+</tr>
+<tr>
+<td>适应性</td>
+<td>差（K 不变）</td>
+<td>好（自适应分布形状）</td>
+</tr>
+<tr>
+<td>参数</td>
+<td>K（通常 50）</td>
+<td>P（通常 0.9-0.95）</td>
+</tr>
+<tr>
+<td>适用场景</td>
+<td>简单场景</td>
+<td>更通用</td>
+</tr>
+</tbody></table>
+<p><strong>实践中常组合使用</strong>：先 Top-K 过滤，再 Top-P 过滤，最后用 Temperature 调节。</p>
+<h3 id="4-6-Repetition-Penalty（重复惩罚）"><a href="#4-6-Repetition-Penalty（重复惩罚）" class="headerlink" title="4.6 Repetition Penalty（重复惩罚）"></a>4.6 Repetition Penalty（重复惩罚）</h3><p>降低已经生成过的 token 的概率，防止”车轱辘话来回说”：</p>
+<pre><code class="highlight python"><span class="keyword">def</span> <span class="title function_">apply_repetition_penalty</span>(<span class="params">logits, generated_ids, penalty=<span class="number">1.2</span></span>):
+    <span class="keyword">for</span> token_id <span class="keyword">in</span> <span class="built_in">set</span>(generated_ids):
+        <span class="keyword">if</span> logits[token_id] &gt; <span class="number">0</span>:
+            logits[token_id] /= penalty
+        <span class="keyword">else</span>:
+            logits[token_id] *= penalty
+    <span class="keyword">return</span> logits</code></pre>
+
+<p>penalty &gt; 1 时会降低已生成 token 的概率。典型值 1.1-1.3。</p>
+<h3 id="4-7-生成策略的完整-Pipeline"><a href="#4-7-生成策略的完整-Pipeline" class="headerlink" title="4.7 生成策略的完整 Pipeline"></a>4.7 生成策略的完整 Pipeline</h3><pre><code class="highlight python"><span class="keyword">def</span> <span class="title function_">generate_token</span>(<span class="params">model, input_ids, kv_cache, config</span>):
+    <span class="comment"># 1. 模型前向传播</span>
+    logits, kv_cache = model(input_ids[:, -<span class="number">1</span>:], kv_cache=kv_cache)
+    logits = logits[:, -<span class="number">1</span>, :]  <span class="comment"># 取最后一个位置的 logits</span>
+
+    <span class="comment"># 2. Repetition Penalty</span>
+    logits = apply_repetition_penalty(logits, input_ids[<span class="number">0</span>], config.rep_penalty)
+
+    <span class="comment"># 3. Temperature</span>
+    logits = logits / config.temperature
+
+    <span class="comment"># 4. Top-K</span>
+    <span class="keyword">if</span> config.top_k &gt; <span class="number">0</span>:
+        logits = top_k_filter(logits, config.top_k)
+
+    <span class="comment"># 5. Top-P</span>
+    <span class="keyword">if</span> config.top_p &lt; <span class="number">1.0</span>:
+        logits = top_p_filter(logits, config.top_p)
+
+    <span class="comment"># 6. 采样</span>
+    probs = F.softmax(logits, dim=-<span class="number">1</span>)
+    next_token = torch.multinomial(probs, num_samples=<span class="number">1</span>)
+
+    <span class="keyword">return</span> next_token, kv_cache</code></pre>
+
+<hr>
+<h2 id="五、FlashAttention-简介"><a href="#五、FlashAttention-简介" class="headerlink" title="五、FlashAttention 简介"></a>五、FlashAttention 简介</h2><h3 id="5-1-标准-Attention-的内存问题"><a href="#5-1-标准-Attention-的内存问题" class="headerlink" title="5.1 标准 Attention 的内存问题"></a>5.1 标准 Attention 的内存问题</h3><p>标准 Attention 需要先计算完整的 ( QK^T ) 矩阵（大小 ( T \times T )），再做 Softmax，再乘 V。对于长序列，这个 ( T \times T ) 矩阵可能非常大。</p>
+<h3 id="5-2-FlashAttention-的核心思想"><a href="#5-2-FlashAttention-的核心思想" class="headerlink" title="5.2 FlashAttention 的核心思想"></a>5.2 FlashAttention 的核心思想</h3><p>FlashAttention 通过**分块计算（tiling）**来避免存储完整的 Attention 矩阵：</p>
+<ol>
+<li>将 Q、K、V 切成小块</li>
+<li>在 GPU 的高速 SRAM 中计算小块的 Attention</li>
+<li>用在线 Softmax 算法逐块累积结果</li>
+<li>不需要在 HBM 中存储完整的 ( T \times T ) 矩阵</li>
+</ol>
+<p><strong>效果</strong>：</p>
+<ul>
+<li>内存从 ( O(T^2) ) 降到 ( O(T) )</li>
+<li>速度提升 2-4 倍（减少 HBM 读写）</li>
+</ul>
+<h3 id="5-3-在-MiniMind-中使用"><a href="#5-3-在-MiniMind-中使用" class="headerlink" title="5.3 在 MiniMind 中使用"></a>5.3 在 MiniMind 中使用</h3><pre><code class="highlight python"><span class="comment"># PyTorch 2.0+ 内置了 FlashAttention 支持</span>
+output = F.scaled_dot_product_attention(
+    q, k, v,
+    attn_mask=mask,
+    is_causal=<span class="literal">True</span>  <span class="comment"># 自动使用因果 mask + FlashAttention</span>
+)</code></pre>
+
+<hr>
+<h2 id="六、模型量化简介"><a href="#六、模型量化简介" class="headerlink" title="六、模型量化简介"></a>六、模型量化简介</h2><h3 id="6-1-为什么需要量化"><a href="#6-1-为什么需要量化" class="headerlink" title="6.1 为什么需要量化"></a>6.1 为什么需要量化</h3><p>模型参数通常用 FP32（4 bytes）或 FP16（2 bytes）存储。量化就是用更少的位数表示：</p>
+<pre><code class="highlight plaintext">FP32: 4 bytes/param → 64M params = 256MB
+FP16: 2 bytes/param → 64M params = 128MB
+INT8: 1 byte/param  → 64M params = 64MB
+INT4: 0.5 byte/param → 64M params = 32MB</code></pre>
+
+<h3 id="6-2-量化类型"><a href="#6-2-量化类型" class="headerlink" title="6.2 量化类型"></a>6.2 量化类型</h3><ul>
+<li><strong>权重量化（Weight Quantization）</strong>：只量化模型权重，推理时反量化回 FP16 计算</li>
+<li><strong>激活量化（Activation Quantization）</strong>：同时量化权重和中间激活</li>
+<li><strong>KV-Cache 量化</strong>：量化 KV-Cache 以节省显存</li>
+</ul>
+<h3 id="6-3-常见量化方法"><a href="#6-3-常见量化方法" class="headerlink" title="6.3 常见量化方法"></a>6.3 常见量化方法</h3><ul>
+<li><strong>GPTQ</strong>：基于 Hessian 矩阵的逐层量化</li>
+<li><strong>AWQ</strong>：保护重要权重通道的量化</li>
+<li><strong>GGUF</strong>：llama.cpp 使用的量化格式，支持 Q4_K_M、Q5_K_M 等</li>
+</ul>
+<h3 id="6-4-量化与-MiniMind"><a href="#6-4-量化与-MiniMind" class="headerlink" title="6.4 量化与 MiniMind"></a>6.4 量化与 MiniMind</h3><p>MiniMind 支持转换为 GGUF 格式，使用 llama.cpp 推理时可以选择不同的量化级别。对于 64M 的小模型，量化的收益相对有限（模型本身就很小），但对于学习量化概念很有价值。</p>
+<hr>
+<h2 id="🎤-面试考点"><a href="#🎤-面试考点" class="headerlink" title="🎤 面试考点"></a>🎤 面试考点</h2><h3 id="Q1-什么是-KV-Cache？为什么需要它？"><a href="#Q1-什么是-KV-Cache？为什么需要它？" class="headerlink" title="Q1: 什么是 KV-Cache？为什么需要它？"></a>Q1: 什么是 KV-Cache？为什么需要它？</h3><p><strong>答</strong>：KV-Cache 是在自回归推理时缓存历史 token 的 Key 和 Value 向量的技术。因为自回归生成时，每生成一个新 token 都需要和所有历史 token 做 Attention，如果不缓存 K&#x2F;V，历史 token 的 K&#x2F;V 会被反复计算。KV-Cache 通过空间换时间，将推理复杂度从 ( O(n^2) ) 降低到 ( O(n) )（针对单步生成）。</p>
+<h3 id="Q2-为什么训练时不使用-KV-Cache？"><a href="#Q2-为什么训练时不使用-KV-Cache？" class="headerlink" title="Q2: 为什么训练时不使用 KV-Cache？"></a>Q2: 为什么训练时不使用 KV-Cache？</h3><p><strong>答</strong>：训练时整个序列一次性输入模型，所有 token 的 Q&#x2F;K&#x2F;V 通过矩阵运算并行计算，不存在重复计算问题。KV-Cache 只在逐 token 的自回归推理时才有意义。另外，训练时使用 Teacher Forcing，每个位置的目标是已知的，不需要真正地自回归生成。</p>
+<h3 id="Q3-KV-Cache-的内存开销怎么计算？"><a href="#Q3-KV-Cache-的内存开销怎么计算？" class="headerlink" title="Q3: KV-Cache 的内存开销怎么计算？"></a>Q3: KV-Cache 的内存开销怎么计算？</h3><p><strong>答</strong>：每层 KV-Cache 大小 &#x3D; 2（K 和 V）× batch_size × seq_len × kv_heads × head_dim × dtype_bytes。总开销 &#x3D; 层数 × 每层大小。对于大模型和长序列，KV-Cache 可能成为推理显存的主要瓶颈。</p>
+<h3 id="Q4-Top-P-和-Top-K-采样的区别？各有什么优劣？"><a href="#Q4-Top-P-和-Top-K-采样的区别？各有什么优劣？" class="headerlink" title="Q4: Top-P 和 Top-K 采样的区别？各有什么优劣？"></a>Q4: Top-P 和 Top-K 采样的区别？各有什么优劣？</h3><p><strong>答</strong>：</p>
+<ul>
+<li>Top-K：固定选择概率最高的 K 个 token，不自适应分布形状</li>
+<li>Top-P：动态选择累积概率达到 P 的最小 token 集合，自适应概率分布</li>
+<li>Top-P 更灵活——当模型确定时自动缩小候选集，不确定时扩大候选集</li>
+<li>实践中常组合使用</li>
+</ul>
+<h3 id="Q5-Temperature-参数的作用是什么？"><a href="#Q5-Temperature-参数的作用是什么？" class="headerlink" title="Q5: Temperature 参数的作用是什么？"></a>Q5: Temperature 参数的作用是什么？</h3><p><strong>答</strong>：Temperature 缩放 logits 后再做 Softmax。T&lt;1 使分布更尖锐（高概率 token 更突出，输出更确定性），T&gt;1 使分布更平坦（低概率 token 有更多机会，输出更多样）。T→0 等价于贪心搜索，T→∞ 等价于均匀随机采样。</p>
+<h3 id="Q6-YaRN-是什么？它解决什么问题？"><a href="#Q6-YaRN-是什么？它解决什么问题？" class="headerlink" title="Q6: YaRN 是什么？它解决什么问题？"></a>Q6: YaRN 是什么？它解决什么问题？</h3><p><strong>答</strong>：YaRN 是一种 RoPE 位置编码的长度外推方法。它解决的问题是：模型训练时的最大序列长度有限，但推理时可能需要处理更长的文本。YaRN 通过对 RoPE 频率进行分区缩放（高频不动、低频缩放、中间插值），使模型能够泛化到更长的位置。</p>
+<h3 id="Q7-FlashAttention-的核心原理是什么？"><a href="#Q7-FlashAttention-的核心原理是什么？" class="headerlink" title="Q7: FlashAttention 的核心原理是什么？"></a>Q7: FlashAttention 的核心原理是什么？</h3><p><strong>答</strong>：FlashAttention 通过分块计算（tiling）避免在 GPU HBM 中存储完整的 ( T \times T ) Attention 矩阵。它利用 GPU SRAM 的高带宽来计算小块 Attention，用在线 Softmax 逐块累积结果，将内存复杂度从 ( O(T^2) ) 降到 ( O(T) )，同时减少 HBM 读写次数提升速度。</p>
+<hr>
+<h2 id="✅-自测题"><a href="#✅-自测题" class="headerlink" title="✅ 自测题"></a>✅ 自测题</h2><ol>
+<li><strong>填空</strong>：KV-Cache 缓存的是 ____ 和 ____，不缓存 ____。</li>
+<li><strong>判断</strong>：训练时也需要使用 KV-Cache 来加速。（对&#x2F;错）</li>
+<li><strong>选择</strong>：Temperature&#x3D;0.1 时，模型的输出会：<ul>
+<li>A. 更加随机多样</li>
+<li>B. 更加确定性</li>
+<li>C. 完全均匀随机</li>
+<li>D. 无影响</li>
+</ul>
+</li>
+<li><strong>简答</strong>：为什么 Top-P 比 Top-K 更灵活？举例说明。</li>
+<li><strong>计算</strong>：一个 32 层模型，hidden_dim&#x3D;4096，kv_heads&#x3D;8，head_dim&#x3D;128，batch_size&#x3D;1，seq_len&#x3D;4096，用 FP16 存储。请计算 KV-Cache 的总大小。</li>
+</ol>
+<details>
+<summary>参考答案</summary>
+
+<ol>
+<li>Key 和 Value，不缓存 Query。</li>
+<li>错。训练时整个序列并行输入，不需要 KV-Cache。</li>
+<li>B。T&lt;1 使分布更尖锐，输出更确定。</li>
+<li>假设词表中 token A 概率 0.9，其余各 0.001。Top-K&#x3D;50 会选 50 个 token，引入了很多不合理的选择。Top-P&#x3D;0.95 只需要选 token A 就够了（0.9&lt;0.95，最多再加一个），自适应地给出更合理的候选集。</li>
+<li>每层 KV-Cache &#x3D; 2 × 1 × 4096 × 8 × 128 × 2 bytes &#x3D; 16,777,216 bytes &#x3D; 16 MB<br>总共 &#x3D; 32 × 16 MB &#x3D; 512 MB</li>
+</ol>
+</details>
+
+<hr>
+<h2 id="下一节预告"><a href="#下一节预告" class="headerlink" title="下一节预告"></a>下一节预告</h2><p>下一节我们将学习 <strong>部署与应用</strong>，了解如何将训练好的 MiniMind 模型通过 ollama、vLLM、llama.cpp 等框架部署为可用的推理服务，以及 Tool Calling 和 Adaptive Thinking 等高级功能。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="http://example.com">XiaoYing</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="http://example.com/2026/05/09/L20-%E6%8E%A8%E7%90%86%E4%BC%98%E5%8C%96/">http://example.com/2026/05/09/L20-%E6%8E%A8%E7%90%86%E4%BC%98%E5%8C%96/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="http://example.com" target="_blank">XiaoYing-Blog🐈</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">学习笔记</a><a class="post-meta__tags" href="/tags/%E6%8E%A8%E7%90%86%E4%BC%98%E5%8C%96/">推理优化</a></div><div class="post-share"><div class="social-share" data-image="/img/icon.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/2026/05/09/L21-%E9%83%A8%E7%BD%B2%E4%B8%8E%E5%BA%94%E7%94%A8/" title="L21-部署与应用"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">L21-部署与应用</div></div><div class="info-2"><div class="info-item-1">L21 - 部署与应用 “从实验室走向生产”   本节目标 掌握模型格式转换流程：PyTorch → Transformers → GGUF 学会使用 ollama、vLLM、llama.cpp 部署 MiniMind 理解 MiniMind 的 OpenAI API 兼容接口 了解 Tool Calling 和 Adaptive Thinking 功能 了解 Streamlit WebUI 和第三方 UI 接入 了解 DDP 多卡训练的基本概念   前置知识 L20 推理优化（KV-Cache、生成策略） 基本的命令行操作 了解 HTTP API 的概念 了解 Docker 基本概念（可选）   一、模型格式转换1.1 为什么需要格式转换MiniMind 训练时使用 PyTorch 原生格式（.pth 文件），但不同推理框架有各自的格式要求： PyTorch (.pth)     ↓ 转换 Transformers (HuggingFace 格式)     ↓ 转换 GGUF (llama.cpp / ollama 格式)  1.2 PyTorch → Transformers...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2026/05/09/L08-RoPE%E6%97%8B%E8%BD%AC%E4%BD%8D%E7%BD%AE%E7%BC%96%E7%A0%81/" title="L08-RoPE旋转位置编码"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-05-09</div><div class="info-item-2">L08-RoPE旋转位置编码</div></div><div class="info-2"><div class="info-item-1">L08 · RoPE 旋转位置编码 “让模型知道谁先谁后”   📋 本节目标学完本节，你将能够：  理解为什么 Transformer 需要额外的位置编码 了解位置编码从绝对到相对、再到 RoPE 的发展历程 掌握 RoPE 的核心数学原理（简化版） 理解 rope_theta 参数和频率计算 了解 YaRN 长度外推的基本思想 读懂 MiniMind 中 precompute_freqs_cis 的源码   🔗 前置知识 L07 · RMSNorm 归一化——了解 Transformer Block 的结构 三角函数基础：sin、cos 的含义 复数的基本概念（可选，不懂也能看懂核心内容）   1. 为什么需要位置编码？1.1 Transformer 的”位置盲”问题回忆一下 Self-Attention 的计算：每个 token 都和所有其他 token 计算注意力分数。这个过程是完全对称的——它不关心 token 出现在什么位置。 这意味着： &quot;猫 吃 鱼&quot; 和 &quot;鱼 吃 猫&quot;  在没有位置编码的 Transformer 看来，这...</div></div></div></a><a class="pagination-related" href="/2026/05/09/L12-%E9%A2%84%E8%AE%AD%E7%BB%83Pretrain/" title="L12-预训练Pretrain"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-05-09</div><div class="info-item-2">L12-预训练Pretrain</div></div><div class="info-2"><div class="info-item-1">L12 - 预训练 Pretrain “让模型学会词语接龙”   📌 本节目标 理解预训练的核心目标：Next Token Prediction 掌握交叉熵损失函数的数学原理 理解学习率调度（余弦退火 + warmup）的原理和作用 掌握混合精度训练（AMP）和梯度裁剪的概念 能读懂 MiniMind 的 train_pretrain.py 源码   📚 前置知识 L11 数据处理流水线 基本的微积分知识（求导、链式法则） 了解梯度下降的基本原理   1. 预训练的目标：Next Token Prediction1.1 什么是预训练？预训练是 LLM 训练的第一阶段，目标是让模型从海量文本中学习语言规律和世界知识。 打个比方：预训练就像让一个孩子读遍所有的书——百科全书、小说、论文、新闻……读完之后，这个孩子虽然还不会”对话”，但已经掌握了丰富的语言能力和知识。 1.2 Next Token Prediction预训练的任务出奇地简单——给定前面的所有 token，预测下一个 token。 输入: &quot;人工智能是计算机科学的一个&quot; 目标: &quot;分&q...</div></div></div></a><a class="pagination-related" href="/2026/05/09/L01-%E4%BB%80%E4%B9%88%E6%98%AF%E5%A4%A7%E8%AF%AD%E8%A8%80%E6%A8%A1%E5%9E%8B/" title="L01-什么是大语言模型"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-05-09</div><div class="info-item-2">L01-什么是大语言模型</div></div><div class="info-2"><div class="info-item-1">L01 - 什么是大语言模型 “大道至简，从文字接龙说起”   📌 本节目标 理解语言模型的核心思想——“预测下一个词” 知道什么是”大”语言模型，以及参数量意味着什么 了解 GPT 系列的发展脉络和 MiniMind 的定位 掌握 Next Token Prediction、Temperature、采样策略等基本概念 理解 Decoder-Only 架构为何成为主流   📚 前置知识 会用电脑，知道什么是”文件””程序” 对”人工智能””ChatGPT”有基本印象（哪怕只是听说过） 不需要任何编程或数学基础   正文讲解1. 什么是语言模型？——从文字接龙说起还记得小时候玩的文字接龙游戏吗？  “天” → “天空” → “天空很蓝” → “天空很蓝，白云飘飘”  你的大脑在做一件事：根据已有的文字，猜下一个最合适的词。 语言模型（Language Model, LM） 做的事情和你一模一样！它是一个数学程序，输入一段文字，输出”下一个词最可能是什么”。 举个例子： 输入: &quot;今天天气真&quot; 语言模型的想法:   &quot;好&quot;  → 概率 60...</div></div></div></a><a class="pagination-related" href="/2026/05/09/L06-%E8%AF%8D%E5%B5%8C%E5%85%A5Embedding/" title="L06-词嵌入Embedding"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-05-09</div><div class="info-item-2">L06-词嵌入Embedding</div></div><div class="info-2"><div class="info-item-1">L06 · 词嵌入 Embedding “把文字变成数字的魔法”   📋 本节目标学完本节，你将能够：  理解从 One-Hot 到 Dense Embedding 的演进过程 掌握 nn.Embedding 的本质——查表操作 理解嵌入维度 d_model&#x3D;768 的含义 掌握权重共享（Weight Tying）的原理和好处 计算 Embedding 层的参数量   🔗 前置知识 L05 · Tokenizer 分词器——知道 token id 是什么 线性代数基础：向量、矩阵、矩阵乘法 PyTorch 基础：nn.Module、nn.Linear   1. 从文字到向量：为什么需要 Embedding？1.1 问题：模型不认识整数上一节我们用 Tokenizer 把文字变成了整数序列： &quot;今天天气真好&quot; → [356, 1892, 478, 23]  但这些整数对模型来说毫无意义。数字 356 并不比 357 更接近”今”的含义。我们需要一种方式，让每个 token 变成一个有意义的向量，使得语义相似的词在向量空间中距离更近。 1.2 一个类...</div></div></div></a><a class="pagination-related" href="/2026/05/09/L09-%E6%B3%A8%E6%84%8F%E5%8A%9B%E6%9C%BA%E5%88%B6%E4%B8%8EGQA/" title="L09-注意力机制与GQA"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-05-09</div><div class="info-item-2">L09-注意力机制与GQA</div></div><div class="info-2"><div class="info-item-1">L09 · 注意力机制与 GQA “每个词都在关注其他词”   📋 本节目标学完本节，你将能够：  深入理解 Self-Attention 中 Q、K、V 的含义和计算过程 手写 Attention 公式并理解每一项的作用 理解 Causal Mask（因果掩码）的必要性 掌握多头注意力（MHA）的工作原理 理解 GQA（Grouped Query Attention）—— MiniMind 的核心设计 读懂 MiniMind 中 Attention 类的完整源码   🔗 前置知识 L08 · RoPE 旋转位置编码——了解 Q&#x2F;K 上的位置编码 矩阵乘法、softmax 函数 PyTorch 基础：torch.matmul()、F.softmax()   1. Self-Attention：核心直觉1.1 一个生活中的类比想象你在一个图书馆里找书：  你带着一个问题（Query）：你想找关于”深度学习”的书 每本书有一个标签（Key）：描述这本书的主题 每本书有实际的内容（Value）：你最终要阅读的东西  你的查找过程：  拿着你的问题，和每本书的标签做匹配 匹...</div></div></div></a><a class="pagination-related" href="/2026/05/09/L10-%E5%89%8D%E9%A6%88%E7%BD%91%E7%BB%9C%E4%B8%8ESwiGLU/" title="L10-前馈网络与SwiGLU"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-05-09</div><div class="info-item-2">L10-前馈网络与SwiGLU</div></div><div class="info-2"><div class="info-item-1">L10 · 前馈网络与 SwiGLU “知识的仓库，智慧的门控”   📋 本节目标学完本节，你将能够：  理解 FFN 在 Transformer 中的角色——为什么说它是”知识仓库” 掌握从传统 FFN 到 SwiGLU 的演进 理解 SiLU 激活函数和门控机制的数学原理 掌握 MiniMind 中 FFN 的三个线性层的作用 计算 FFN 的参数量和扩展比 了解 MoE（混合专家）与 FFN 的关系   🔗 前置知识 L09 · 注意力机制与 GQA——了解 Attention 的输出 线性代数：矩阵乘法 激活函数的基本概念（ReLU）   1. FFN 在 Transformer 中的角色1.1 Attention 和 FFN：两大核心组件每个 Transformer Block 由两个子层组成： 输入 → RMSNorm → Attention → 残差连接 → RMSNorm → FFN → 残差连接 → 输出        ↑                                  ↑        token 间交流                 ...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/loading.gif" data-original="/img/icon.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">XiaoYing</div><div class="author-info-description">我们唯一不变的就是改变</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">22</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">35</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">2</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/XiaoYing-Blog"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/XiaoYing-Blog" target="_blank" title="GitHub"><i class="fab fa-github" style="color: #24292e;"></i></a><a class="social-icon" href="mailto:3442601927@qq.com" target="_blank" title="邮箱"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">欢迎来到我的博客！</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#L20-%E6%8E%A8%E7%90%86%E4%BC%98%E5%8C%96"><span class="toc-number">1.</span> <span class="toc-text">L20 - 推理优化</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%9C%AC%E8%8A%82%E7%9B%AE%E6%A0%87"><span class="toc-number">1.1.</span> <span class="toc-text">本节目标</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%89%8D%E7%BD%AE%E7%9F%A5%E8%AF%86"><span class="toc-number">1.2.</span> <span class="toc-text">前置知识</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E8%87%AA%E5%9B%9E%E5%BD%92%E7%94%9F%E6%88%90%E7%9A%84%E7%93%B6%E9%A2%88"><span class="toc-number">1.3.</span> <span class="toc-text">一、自回归生成的瓶颈</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-1-%E8%87%AA%E5%9B%9E%E5%BD%92%E7%94%9F%E6%88%90%E6%98%AF%E6%80%8E%E4%B9%88%E5%B7%A5%E4%BD%9C%E7%9A%84"><span class="toc-number">1.3.1.</span> <span class="toc-text">1.1 自回归生成是怎么工作的</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-%E7%93%B6%E9%A2%88%E5%88%86%E6%9E%90"><span class="toc-number">1.3.2.</span> <span class="toc-text">1.2 瓶颈分析</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81KV-Cache-%E8%AF%A6%E8%A7%A3"><span class="toc-number">1.4.</span> <span class="toc-text">二、KV-Cache 详解</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-%E6%A0%B8%E5%BF%83%E6%80%9D%E6%83%B3"><span class="toc-number">1.4.1.</span> <span class="toc-text">2.1 核心思想</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-%E4%B8%BA%E4%BB%80%E4%B9%88%E5%8F%AA%E7%BC%93%E5%AD%98-K-%E5%92%8C-V%EF%BC%8C%E4%B8%8D%E7%BC%93%E5%AD%98-Q%EF%BC%9F"><span class="toc-number">1.4.2.</span> <span class="toc-text">2.2 为什么只缓存 K 和 V，不缓存 Q？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-KV-Cache-%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="toc-number">1.4.3.</span> <span class="toc-text">2.3 KV-Cache 的实现</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-4-%E8%AE%AD%E7%BB%83%E6%97%B6%E4%B8%8D%E9%9C%80%E8%A6%81-KV-Cache"><span class="toc-number">1.4.4.</span> <span class="toc-text">2.4 训练时不需要 KV-Cache</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-5-KV-Cache-%E7%9A%84%E5%86%85%E5%AD%98%E5%BC%80%E9%94%80"><span class="toc-number">1.4.5.</span> <span class="toc-text">2.5 KV-Cache 的内存开销</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-6-KV-Cache-%E7%9A%84%E4%BC%98%E5%8C%96%E6%8A%80%E6%9C%AF"><span class="toc-number">1.4.6.</span> <span class="toc-text">2.6 KV-Cache 的优化技术</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81YaRN-%E9%95%BF%E5%BA%A6%E5%A4%96%E6%8E%A8"><span class="toc-number">1.5.</span> <span class="toc-text">三、YaRN 长度外推</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-%E9%97%AE%E9%A2%98%E8%83%8C%E6%99%AF"><span class="toc-number">1.5.1.</span> <span class="toc-text">3.1 问题背景</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-YaRN-%E7%9A%84%E5%9F%BA%E6%9C%AC%E6%80%9D%E6%83%B3"><span class="toc-number">1.5.2.</span> <span class="toc-text">3.2 YaRN 的基本思想</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-%E7%BC%A9%E6%94%BE%E6%95%88%E6%9E%9C"><span class="toc-number">1.5.3.</span> <span class="toc-text">3.3 缩放效果</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-4-MiniMind-%E4%B8%AD%E7%9A%84-YaRN-%E5%AE%9E%E7%8E%B0"><span class="toc-number">1.5.4.</span> <span class="toc-text">3.4 MiniMind 中的 YaRN 实现</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E7%94%9F%E6%88%90%E7%AD%96%E7%95%A5"><span class="toc-number">1.6.</span> <span class="toc-text">四、生成策略</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-%E8%B4%AA%E5%BF%83%E6%90%9C%E7%B4%A2%EF%BC%88Greedy-Search%EF%BC%89"><span class="toc-number">1.6.1.</span> <span class="toc-text">4.1 贪心搜索（Greedy Search）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-Temperature-%E5%8F%82%E6%95%B0"><span class="toc-number">1.6.2.</span> <span class="toc-text">4.2 Temperature 参数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-Top-K-%E9%87%87%E6%A0%B7"><span class="toc-number">1.6.3.</span> <span class="toc-text">4.3 Top-K 采样</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-4-Top-P%EF%BC%88Nucleus-Sampling%EF%BC%89"><span class="toc-number">1.6.4.</span> <span class="toc-text">4.4 Top-P（Nucleus Sampling）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-5-Top-K-vs-Top-P"><span class="toc-number">1.6.5.</span> <span class="toc-text">4.5 Top-K vs Top-P</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-6-Repetition-Penalty%EF%BC%88%E9%87%8D%E5%A4%8D%E6%83%A9%E7%BD%9A%EF%BC%89"><span class="toc-number">1.6.6.</span> <span class="toc-text">4.6 Repetition Penalty（重复惩罚）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-7-%E7%94%9F%E6%88%90%E7%AD%96%E7%95%A5%E7%9A%84%E5%AE%8C%E6%95%B4-Pipeline"><span class="toc-number">1.6.7.</span> <span class="toc-text">4.7 生成策略的完整 Pipeline</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81FlashAttention-%E7%AE%80%E4%BB%8B"><span class="toc-number">1.7.</span> <span class="toc-text">五、FlashAttention 简介</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1-%E6%A0%87%E5%87%86-Attention-%E7%9A%84%E5%86%85%E5%AD%98%E9%97%AE%E9%A2%98"><span class="toc-number">1.7.1.</span> <span class="toc-text">5.1 标准 Attention 的内存问题</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-FlashAttention-%E7%9A%84%E6%A0%B8%E5%BF%83%E6%80%9D%E6%83%B3"><span class="toc-number">1.7.2.</span> <span class="toc-text">5.2 FlashAttention 的核心思想</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-3-%E5%9C%A8-MiniMind-%E4%B8%AD%E4%BD%BF%E7%94%A8"><span class="toc-number">1.7.3.</span> <span class="toc-text">5.3 在 MiniMind 中使用</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E6%A8%A1%E5%9E%8B%E9%87%8F%E5%8C%96%E7%AE%80%E4%BB%8B"><span class="toc-number">1.8.</span> <span class="toc-text">六、模型量化简介</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81%E9%87%8F%E5%8C%96"><span class="toc-number">1.8.1.</span> <span class="toc-text">6.1 为什么需要量化</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-2-%E9%87%8F%E5%8C%96%E7%B1%BB%E5%9E%8B"><span class="toc-number">1.8.2.</span> <span class="toc-text">6.2 量化类型</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-3-%E5%B8%B8%E8%A7%81%E9%87%8F%E5%8C%96%E6%96%B9%E6%B3%95"><span class="toc-number">1.8.3.</span> <span class="toc-text">6.3 常见量化方法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-4-%E9%87%8F%E5%8C%96%E4%B8%8E-MiniMind"><span class="toc-number">1.8.4.</span> <span class="toc-text">6.4 量化与 MiniMind</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%F0%9F%8E%A4-%E9%9D%A2%E8%AF%95%E8%80%83%E7%82%B9"><span class="toc-number">1.9.</span> <span class="toc-text">🎤 面试考点</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Q1-%E4%BB%80%E4%B9%88%E6%98%AF-KV-Cache%EF%BC%9F%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81%E5%AE%83%EF%BC%9F"><span class="toc-number">1.9.1.</span> <span class="toc-text">Q1: 什么是 KV-Cache？为什么需要它？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Q2-%E4%B8%BA%E4%BB%80%E4%B9%88%E8%AE%AD%E7%BB%83%E6%97%B6%E4%B8%8D%E4%BD%BF%E7%94%A8-KV-Cache%EF%BC%9F"><span class="toc-number">1.9.2.</span> <span class="toc-text">Q2: 为什么训练时不使用 KV-Cache？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Q3-KV-Cache-%E7%9A%84%E5%86%85%E5%AD%98%E5%BC%80%E9%94%80%E6%80%8E%E4%B9%88%E8%AE%A1%E7%AE%97%EF%BC%9F"><span class="toc-number">1.9.3.</span> <span class="toc-text">Q3: KV-Cache 的内存开销怎么计算？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Q4-Top-P-%E5%92%8C-Top-K-%E9%87%87%E6%A0%B7%E7%9A%84%E5%8C%BA%E5%88%AB%EF%BC%9F%E5%90%84%E6%9C%89%E4%BB%80%E4%B9%88%E4%BC%98%E5%8A%A3%EF%BC%9F"><span class="toc-number">1.9.4.</span> <span class="toc-text">Q4: Top-P 和 Top-K 采样的区别？各有什么优劣？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Q5-Temperature-%E5%8F%82%E6%95%B0%E7%9A%84%E4%BD%9C%E7%94%A8%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="toc-number">1.9.5.</span> <span class="toc-text">Q5: Temperature 参数的作用是什么？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Q6-YaRN-%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F%E5%AE%83%E8%A7%A3%E5%86%B3%E4%BB%80%E4%B9%88%E9%97%AE%E9%A2%98%EF%BC%9F"><span class="toc-number">1.9.6.</span> <span class="toc-text">Q6: YaRN 是什么？它解决什么问题？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Q7-FlashAttention-%E7%9A%84%E6%A0%B8%E5%BF%83%E5%8E%9F%E7%90%86%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="toc-number">1.9.7.</span> <span class="toc-text">Q7: FlashAttention 的核心原理是什么？</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E2%9C%85-%E8%87%AA%E6%B5%8B%E9%A2%98"><span class="toc-number">1.10.</span> <span class="toc-text">✅ 自测题</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%8B%E4%B8%80%E8%8A%82%E9%A2%84%E5%91%8A"><span class="toc-number">1.11.</span> <span class="toc-text">下一节预告</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/05/09/L01-%E4%BB%80%E4%B9%88%E6%98%AF%E5%A4%A7%E8%AF%AD%E8%A8%80%E6%A8%A1%E5%9E%8B/" title="L01-什么是大语言模型">L01-什么是大语言模型</a><time datetime="2026-05-08T16:00:00.000Z" title="发表于 2026-05-09 00:00:00">2026-05-09</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/05/09/L03-PyTorch%E5%BF%AB%E9%80%9F%E4%B8%8A%E6%89%8B/" title="L03-PyTorch快速上手">L03-PyTorch快速上手</a><time datetime="2026-05-08T16:00:00.000Z" title="发表于 2026-05-09 00:00:00">2026-05-09</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/05/09/L02-Transformer%E5%85%A8%E6%99%AF%E5%9B%BE/" title="L02-Transformer全景图">L02-Transformer全景图</a><time datetime="2026-05-08T16:00:00.000Z" title="发表于 2026-05-09 00:00:00">2026-05-09</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/05/09/L05-Tokenizer%E5%88%86%E8%AF%8D%E5%99%A8/" title="L05-Tokenizer分词器">L05-Tokenizer分词器</a><time datetime="2026-05-08T16:00:00.000Z" title="发表于 2026-05-09 00:00:00">2026-05-09</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/05/09/L04-MiniMind%E9%A1%B9%E7%9B%AE%E5%AF%BC%E8%A7%88/" title="L04-MiniMind项目导览">L04-MiniMind项目导览</a><time datetime="2026-05-08T16:00:00.000Z" title="发表于 2026-05-09 00:00:00">2026-05-09</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2026 By XiaoYing</span></div><div class="footer_custom_text">🌸 愿所有努力，皆有回响 🌸</div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.4"></script><script src="/js/main.js?v=5.5.4"></script><div class="js-pjax"></div><script defer src="/js/cursor.js"></script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索文章" type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.4"></script></div></div><script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script>
+        <style>
+            [bg-lazy] {
+                background-image: none !important;
+                background-color: #eee !important;
+            }
+        </style>
+        <script>
+            window.imageLazyLoadSetting = {
+                isSPA: false,
+                preloadRatio: 1,
+                processImages: null,
+            };
+        </script><script>window.addEventListener("load",function(){var t=/\.(gif|jpg|jpeg|tiff|png)$/i,r=/^data:image\/[a-z\d\-\.\+]+;base64,/;Array.prototype.slice.call(document.querySelectorAll("img[data-original]")).forEach(function(a){var e=a.parentNode;"A"===e.tagName&&(t.test(e.href)||r.test(e.href))&&(e.href=a.dataset.original)})});</script><script>(r=>{r.imageLazyLoadSetting.processImages=t;var a=r.imageLazyLoadSetting.isSPA,o=r.imageLazyLoadSetting.preloadRatio||1,d=i();function i(){var t=Array.prototype.slice.call(document.querySelectorAll("img[data-original]")),e=Array.prototype.slice.call(document.querySelectorAll("[bg-lazy]"));return t.concat(e)}function t(t){(a||t)&&(d=i());for(var e,n=0;n<d.length;n++)0<=(e=(e=d[n]).getBoundingClientRect()).bottom&&0<=e.left&&e.top<=(r.innerHeight*o||document.documentElement.clientHeight*o)&&(()=>{var t,e,a,o,i=d[n];e=function(){d=d.filter(function(t){return i!==t}),r.imageLazyLoadSetting.onImageLoaded&&r.imageLazyLoadSetting.onImageLoaded(i)},(t=i).dataset.loaded||(t.hasAttribute("bg-lazy")?(t.removeAttribute("bg-lazy"),e&&e()):(a=new Image,o=t.getAttribute("data-original"),a.onload=function(){t.src=o,t.removeAttribute("data-original"),t.setAttribute("data-loaded",!0),e&&e()},a.onerror=function(){t.removeAttribute("data-original"),t.setAttribute("data-loaded",!1),t.src=o},t.src!==o&&(a.src=o)))})()}function e(){clearTimeout(t.tId),t.tId=setTimeout(t,500)}t(),document.addEventListener("scroll",e),r.addEventListener("resize",e),r.addEventListener("orientationchange",e)})(this);</script></body></html>

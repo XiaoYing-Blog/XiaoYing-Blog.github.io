@@ -1,0 +1,627 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>L08-RoPE旋转位置编码 | XiaoYing-Blog🐈</title><meta name="author" content="XiaoYing"><meta name="copyright" content="XiaoYing"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="L08 · RoPE 旋转位置编码 “让模型知道谁先谁后”   📋 本节目标学完本节，你将能够：  理解为什么 Transformer 需要额外的位置编码 了解位置编码从绝对到相对、再到 RoPE 的发展历程 掌握 RoPE 的核心数学原理（简化版） 理解 rope_theta 参数和频率计算 了解 YaRN 长度外推的基本思想 读懂 MiniMind 中 precompute_freqs_ci">
+<meta property="og:type" content="article">
+<meta property="og:title" content="L08-RoPE旋转位置编码">
+<meta property="og:url" content="http://example.com/2026/05/09/L08-RoPE%E6%97%8B%E8%BD%AC%E4%BD%8D%E7%BD%AE%E7%BC%96%E7%A0%81/index.html">
+<meta property="og:site_name" content="XiaoYing-Blog🐈">
+<meta property="og:description" content="L08 · RoPE 旋转位置编码 “让模型知道谁先谁后”   📋 本节目标学完本节，你将能够：  理解为什么 Transformer 需要额外的位置编码 了解位置编码从绝对到相对、再到 RoPE 的发展历程 掌握 RoPE 的核心数学原理（简化版） 理解 rope_theta 参数和频率计算 了解 YaRN 长度外推的基本思想 读懂 MiniMind 中 precompute_freqs_ci">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/img/icon.png">
+<meta property="article:published_time" content="2026-05-08T16:00:00.000Z">
+<meta property="article:modified_time" content="2026-05-10T05:38:19.513Z">
+<meta property="article:author" content="XiaoYing">
+<meta property="article:tag" content="RoPE">
+<meta property="article:tag" content="学习笔记">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/img/icon.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "L08-RoPE旋转位置编码",
+  "url": "http://example.com/2026/05/09/L08-RoPE%E6%97%8B%E8%BD%AC%E4%BD%8D%E7%BD%AE%E7%BC%96%E7%A0%81/",
+  "image": "http://example.com/img/icon.png",
+  "datePublished": "2026-05-08T16:00:00.000Z",
+  "dateModified": "2026-05-10T05:38:19.513Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "XiaoYing",
+      "url": "http://example.com"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="http://example.com/2026/05/09/L08-RoPE%E6%97%8B%E8%BD%AC%E4%BD%8D%E7%BD%AE%E7%BC%96%E7%A0%81/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.4"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":false,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'L08-RoPE旋转位置编码',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/custom.css"><meta name="generator" content="Hexo 8.1.2"></head><body><div class="bg-animation" id="web_bg" style="background-image: url(/img/avg.jpg);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/loading.gif" data-original="/img/icon.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">22</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">35</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">2</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><span class="site-page group hide"><i class="fa-fw fa fa-list"></i><span> 列表</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/music/"><i class="fa-fw fas fa-music"></i><span> 音乐</span></a></li><li><a class="site-page child" href="/picture/"><i class="fa-fw fas fa-images"></i><span> 照片</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 电影</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/comments/"><i class="fa-fw fas fa-envelope-open"></i><span> 留言板</span></a></div><div class="menus_item"><a class="site-page" href="/link"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-color: rgba(0, 0, 0, 0);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">XiaoYing-Blog🐈</span></a><a class="nav-page-title" href="/"><span class="site-name">L08-RoPE旋转位置编码</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><span class="site-page group hide"><i class="fa-fw fa fa-list"></i><span> 列表</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/music/"><i class="fa-fw fas fa-music"></i><span> 音乐</span></a></li><li><a class="site-page child" href="/picture/"><i class="fa-fw fas fa-images"></i><span> 照片</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 电影</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/comments/"><i class="fa-fw fas fa-envelope-open"></i><span> 留言板</span></a></div><div class="menus_item"><a class="site-page" href="/link"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">L08-RoPE旋转位置编码</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-05-08T16:00:00.000Z" title="发表于 2026-05-09 00:00:00">2026-05-09</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-05-10T05:38:19.513Z" title="更新于 2026-05-10 13:38:19">2026-05-10</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E5%A4%A7%E6%A8%A1%E5%9E%8B%E5%AD%A6%E4%B9%A0/">大模型学习</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">5.3k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>19分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h1 id="L08-·-RoPE-旋转位置编码"><a href="#L08-·-RoPE-旋转位置编码" class="headerlink" title="L08 · RoPE 旋转位置编码"></a>L08 · RoPE 旋转位置编码</h1><blockquote>
+<p><em>“让模型知道谁先谁后”</em></p>
+</blockquote>
+<hr>
+<h2 id="📋-本节目标"><a href="#📋-本节目标" class="headerlink" title="📋 本节目标"></a>📋 本节目标</h2><p>学完本节，你将能够：</p>
+<ol>
+<li>理解为什么 Transformer 需要额外的位置编码</li>
+<li>了解位置编码从绝对到相对、再到 RoPE 的发展历程</li>
+<li>掌握 RoPE 的核心数学原理（简化版）</li>
+<li>理解 rope_theta 参数和频率计算</li>
+<li>了解 YaRN 长度外推的基本思想</li>
+<li>读懂 MiniMind 中 <code>precompute_freqs_cis</code> 的源码</li>
+</ol>
+<hr>
+<h2 id="🔗-前置知识"><a href="#🔗-前置知识" class="headerlink" title="🔗 前置知识"></a>🔗 前置知识</h2><ul>
+<li><a href="L07-RMSNorm%E5%BD%92%E4%B8%80%E5%8C%96.md">L07 · RMSNorm 归一化</a>——了解 Transformer Block 的结构</li>
+<li>三角函数基础：sin、cos 的含义</li>
+<li>复数的基本概念（可选，不懂也能看懂核心内容）</li>
+</ul>
+<hr>
+<h2 id="1-为什么需要位置编码？"><a href="#1-为什么需要位置编码？" class="headerlink" title="1. 为什么需要位置编码？"></a>1. 为什么需要位置编码？</h2><h3 id="1-1-Transformer-的”位置盲”问题"><a href="#1-1-Transformer-的”位置盲”问题" class="headerlink" title="1.1 Transformer 的”位置盲”问题"></a>1.1 Transformer 的”位置盲”问题</h3><p>回忆一下 Self-Attention 的计算：每个 token 都和所有其他 token 计算注意力分数。这个过程是<strong>完全对称的</strong>——它不关心 token 出现在什么位置。</p>
+<p>这意味着：</p>
+<pre><code class="highlight plaintext">&quot;猫 吃 鱼&quot; 和 &quot;鱼 吃 猫&quot;</code></pre>
+
+<p>在没有位置编码的 Transformer 看来，这两句话<strong>完全一样</strong>！因为 Self-Attention 只看到了{猫, 吃, 鱼}三个 token 互相关注，不知道谁在前谁在后。</p>
+<p>但显然，”猫吃鱼”和”鱼吃猫”意思完全不同。<strong>位置编码的作用就是告诉模型每个 token 在序列中的位置。</strong></p>
+<h3 id="1-2-RNN-和-CNN-为什么不需要？"><a href="#1-2-RNN-和-CNN-为什么不需要？" class="headerlink" title="1.2 RNN 和 CNN 为什么不需要？"></a>1.2 RNN 和 CNN 为什么不需要？</h3><ul>
+<li><strong>RNN</strong>：天然按顺序处理，每个时间步依赖前一个时间步，位置信息隐含在计算顺序中</li>
+<li><strong>CNN</strong>：卷积核有固定的感受野，相对位置信息编码在卷积核的权重中</li>
+<li><strong>Transformer</strong>：所有位置并行计算，Self-Attention 是置换不变的（permutation invariant），必须显式注入位置信息</li>
+</ul>
+<hr>
+<h2 id="2-位置编码的发展历程"><a href="#2-位置编码的发展历程" class="headerlink" title="2. 位置编码的发展历程"></a>2. 位置编码的发展历程</h2><h3 id="2-1-绝对位置编码（Sinusoidal-Learned）"><a href="#2-1-绝对位置编码（Sinusoidal-Learned）" class="headerlink" title="2.1 绝对位置编码（Sinusoidal &amp; Learned）"></a>2.1 绝对位置编码（Sinusoidal &amp; Learned）</h3><p>**原始 Transformer（2017）**使用正弦&#x2F;余弦函数生成位置编码：</p>
+<p>$$<br>\text{PE}(pos, 2i) &#x3D; \sin\left(\frac{pos}{10000^{2i&#x2F;d}}\right)<br>$$</p>
+<p>$$<br>\text{PE}(pos, 2i+1) &#x3D; \cos\left(\frac{pos}{10000^{2i&#x2F;d}}\right)<br>$$</p>
+<p>每个位置有一个固定的向量，直接<strong>加到</strong> Embedding 上：</p>
+<p>$$<br>\text{input} &#x3D; \text{Embedding}(x) + \text{PE}(pos)<br>$$</p>
+<p><strong>GPT 系列</strong>改用可学习的绝对位置编码：训练一个 (max_seq_len, d_model) 的参数矩阵。</p>
+<h4 id="绝对位置编码的问题"><a href="#绝对位置编码的问题" class="headerlink" title="绝对位置编码的问题"></a>绝对位置编码的问题</h4><ol>
+<li><strong>无法外推</strong>：如果训练时最大长度是 512，推理时无法处理长度 1024 的序列</li>
+<li><strong>不能直接编码相对关系</strong>：”第 3 个词和第 5 个词的关系”需要模型自己学习</li>
+</ol>
+<h3 id="2-2-相对位置编码（ALiBi-等）"><a href="#2-2-相对位置编码（ALiBi-等）" class="headerlink" title="2.2 相对位置编码（ALiBi 等）"></a>2.2 相对位置编码（ALiBi 等）</h3><p>相对位置编码的核心思想：<strong>不告诉模型”你在第几个位置”，而是告诉模型”两个 token 之间距离多远”。</strong></p>
+<p>例如 ALiBi（Attention with Linear Biases）直接在注意力分数上减去一个与距离成正比的偏置。</p>
+<h3 id="2-3-RoPE：旋转位置编码（2021）"><a href="#2-3-RoPE：旋转位置编码（2021）" class="headerlink" title="2.3 RoPE：旋转位置编码（2021）"></a>2.3 RoPE：旋转位置编码（2021）</h3><p>RoPE（Rotary Position Embedding）由苏剑林提出，是目前<strong>最主流</strong>的位置编码方案，被 LLaMA、Qwen、MiniMind 等模型采用。</p>
+<p>RoPE 的优雅之处在于：它通过<strong>旋转</strong>来编码位置，使得两个位置的注意力分数<strong>天然地只依赖于它们的相对距离</strong>。</p>
+<hr>
+<h2 id="3-RoPE-的核心思想"><a href="#3-RoPE-的核心思想" class="headerlink" title="3. RoPE 的核心思想"></a>3. RoPE 的核心思想</h2><h3 id="3-1-一个直觉：用旋转角度表示位置"><a href="#3-1-一个直觉：用旋转角度表示位置" class="headerlink" title="3.1 一个直觉：用旋转角度表示位置"></a>3.1 一个直觉：用旋转角度表示位置</h3><p>想象一个钟表的指针：</p>
+<ul>
+<li>位置 0 → 指针指向 12 点</li>
+<li>位置 1 → 指针旋转 θ 度</li>
+<li>位置 2 → 指针旋转 2θ 度</li>
+<li>位置 m → 指针旋转 mθ 度</li>
+</ul>
+<p>两个位置之间的”距离”就是它们的旋转角度之差，而这个差值<strong>只取决于相对距离 (m-n)</strong>，与绝对位置无关！</p>
+<h3 id="3-2-二维的情况：旋转矩阵"><a href="#3-2-二维的情况：旋转矩阵" class="headerlink" title="3.2 二维的情况：旋转矩阵"></a>3.2 二维的情况：旋转矩阵</h3><p>先从最简单的二维情况理解。假设我们有一个二维向量 (\mathbf{q} &#x3D; (q_0, q_1))，要给它加上位置 (m) 的信息。</p>
+<p>RoPE 的做法是：<strong>对这个向量施加一个旋转角度为 (m\theta) 的旋转变换</strong>：</p>
+<p>$$<br>R_m \mathbf{q} &#x3D; \begin{pmatrix} \cos m\theta &amp; -\sin m\theta \ \sin m\theta &amp; \cos m\theta \end{pmatrix} \begin{pmatrix} q_0 \ q_1 \end{pmatrix}<br>$$</p>
+<p>结果：</p>
+<p>$$<br>R_m \mathbf{q} &#x3D; \begin{pmatrix} q_0 \cos m\theta - q_1 \sin m\theta \ q_0 \sin m\theta + q_1 \cos m\theta \end{pmatrix}<br>$$</p>
+<h3 id="3-3-关键性质：内积只依赖相对位置"><a href="#3-3-关键性质：内积只依赖相对位置" class="headerlink" title="3.3 关键性质：内积只依赖相对位置"></a>3.3 关键性质：内积只依赖相对位置</h3><p>如果 Query 在位置 (m)，Key 在位置 (n)，它们的注意力分数是：</p>
+<p>$$<br>(R_m \mathbf{q})^T (R_n \mathbf{k}) &#x3D; \mathbf{q}^T R_m^T R_n \mathbf{k} &#x3D; \mathbf{q}^T R_{n-m} \mathbf{k}<br>$$</p>
+<p>这里用到了旋转矩阵的性质：(R_m^T R_n &#x3D; R_{n-m})</p>
+<p><strong>注意力分数只依赖相对距离 (n-m)</strong>，这就是 RoPE 的核心优势！</p>
+<h3 id="3-4-高维推广：两两分组"><a href="#3-4-高维推广：两两分组" class="headerlink" title="3.4 高维推广：两两分组"></a>3.4 高维推广：两两分组</h3><p>实际中，d_model 不是 2 维而是 768 维。RoPE 的处理方式是<strong>将 768 维向量两两分组</strong>，得到 384 组，每组是一个二维向量，分别施加不同频率的旋转：</p>
+<pre><code class="highlight plaintext">维度 0,1 → 用频率 θ₀ 旋转
+维度 2,3 → 用频率 θ₁ 旋转
+维度 4,5 → 用频率 θ₂ 旋转
+...
+维度 766,767 → 用频率 θ₃₈₃ 旋转</code></pre>
+
+<p>每组的旋转频率不同，低维度组频率高（变化快），高维度组频率低（变化慢）。这类似于用不同周期的”时钟”来编码位置，就像用秒针、分针、时针来表示时间。</p>
+<h3 id="3-5-频率计算公式"><a href="#3-5-频率计算公式" class="headerlink" title="3.5 频率计算公式"></a>3.5 频率计算公式</h3><p>$$<br>\theta_i &#x3D; \frac{1}{\text{base}^{2i&#x2F;d}}<br>$$</p>
+<p>其中：</p>
+<ul>
+<li>(\text{base}) 是 rope_theta 参数（MiniMind 使用 1e6）</li>
+<li>(i) 是组的索引（0, 1, 2, …, d&#x2F;2-1）</li>
+<li>(d) 是向量维度</li>
+</ul>
+<p>对于位置 (m)，第 (i) 组的旋转角度为：</p>
+<p>$$<br>m \cdot \theta_i &#x3D; \frac{m}{\text{base}^{2i&#x2F;d}}<br>$$</p>
+<ul>
+<li>低维度（(i) 小）→ (\theta_i) 大 → 旋转角度大 → 变化快（编码近距离关系）</li>
+<li>高维度（(i) 大）→ (\theta_i) 小 → 旋转角度小 → 变化慢（编码远距离关系）</li>
+</ul>
+<hr>
+<h2 id="4-rope-theta-参数的含义"><a href="#4-rope-theta-参数的含义" class="headerlink" title="4. rope_theta 参数的含义"></a>4. rope_theta 参数的含义</h2><h3 id="4-1-rope-theta-是什么？"><a href="#4-1-rope-theta-是什么？" class="headerlink" title="4.1 rope_theta 是什么？"></a>4.1 rope_theta 是什么？</h3><p>rope_theta（即公式中的 base）是 RoPE 的一个超参数，控制频率的分布。</p>
+<table>
+<thead>
+<tr>
+<th>模型</th>
+<th>rope_theta</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>LLaMA 1</td>
+<td>10,000</td>
+</tr>
+<tr>
+<td>LLaMA 3</td>
+<td>500,000</td>
+</tr>
+<tr>
+<td><strong>MiniMind</strong></td>
+<td><strong>1,000,000 (1e6)</strong></td>
+</tr>
+<tr>
+<td>Qwen2</td>
+<td>1,000,000</td>
+</tr>
+</tbody></table>
+<h3 id="4-2-rope-theta-的影响"><a href="#4-2-rope-theta-的影响" class="headerlink" title="4.2 rope_theta 的影响"></a>4.2 rope_theta 的影响</h3><p>rope_theta 越大：</p>
+<ul>
+<li>所有频率 (\theta_i) 都会变小</li>
+<li>旋转角度变化更慢</li>
+<li>模型能处理的<strong>有效序列长度更长</strong></li>
+</ul>
+<p>直觉：想象一个时钟，如果秒针转得很慢，那么它能”计时”更长的时间而不会”绕回来”。</p>
+<h3 id="4-3-MiniMind-为什么用-1e6？"><a href="#4-3-MiniMind-为什么用-1e6？" class="headerlink" title="4.3 MiniMind 为什么用 1e6？"></a>4.3 MiniMind 为什么用 1e6？</h3><p>MiniMind 使用较大的 rope_theta &#x3D; 1e6，这让模型天然具有更好的<strong>长文本处理能力</strong>。虽然 MiniMind 的训练序列长度可能不长，但这个参数为未来扩展留下了空间。</p>
+<hr>
+<h2 id="5-RoPE-的优点总结"><a href="#5-RoPE-的优点总结" class="headerlink" title="5. RoPE 的优点总结"></a>5. RoPE 的优点总结</h2><table>
+<thead>
+<tr>
+<th>优点</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>天然的相对位置</td>
+<td>注意力分数自动只依赖相对距离，无需额外设计</td>
+</tr>
+<tr>
+<td>良好的外推能力</td>
+<td>理论上可以处理比训练长度更长的序列</td>
+</tr>
+<tr>
+<td>计算高效</td>
+<td>只需要 sin&#x2F;cos 和元素乘法，不需要额外参数</td>
+</tr>
+<tr>
+<td>无额外参数</td>
+<td>RoPE 不引入可学习参数，旋转频率是预计算的</td>
+</tr>
+<tr>
+<td>长期衰减</td>
+<td>距离越远的 token 对，注意力分数自然衰减</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="6-YaRN-长度外推"><a href="#6-YaRN-长度外推" class="headerlink" title="6. YaRN 长度外推"></a>6. YaRN 长度外推</h2><h3 id="6-1-问题：模型能处理超长文本吗？"><a href="#6-1-问题：模型能处理超长文本吗？" class="headerlink" title="6.1 问题：模型能处理超长文本吗？"></a>6.1 问题：模型能处理超长文本吗？</h3><p>假设模型训练时的最大序列长度是 512 个 token，那么推理时能处理 4096 个 token 吗？</p>
+<p>直接用 RoPE，超出训练长度的位置编码是”没见过”的，模型表现会急剧下降。这就是**长度外推（Length Extrapolation）**问题。</p>
+<h3 id="6-2-YaRN-的基本思想"><a href="#6-2-YaRN-的基本思想" class="headerlink" title="6.2 YaRN 的基本思想"></a>6.2 YaRN 的基本思想</h3><p>YaRN（Yet another RoPE extensioN）是一种 RoPE 的外推增强方法。它的核心思想：</p>
+<ol>
+<li><strong>频率插值</strong>：把高频部分保持不变，低频部分做拉伸</li>
+<li><strong>注意力缩放</strong>：对注意力分数做适当缩放，补偿外推带来的分布偏移</li>
+</ol>
+<p>直觉：想象你有一把只有 30cm 的尺子（训练长度 512），现在要量 2 米的东西（推理长度 4096）。YaRN 的做法不是简单地把刻度变稀（NTK 插值），而是：</p>
+<ul>
+<li>大的刻度（cm）变稀——对应低频拉伸</li>
+<li>小的刻度（mm）保持不变——对应高频保持</li>
+</ul>
+<h3 id="6-3-MiniMind-中的-YaRN-支持"><a href="#6-3-MiniMind-中的-YaRN-支持" class="headerlink" title="6.3 MiniMind 中的 YaRN 支持"></a>6.3 MiniMind 中的 YaRN 支持</h3><p>MiniMind 的配置中支持 YaRN 外推：</p>
+<pre><code class="highlight python"><span class="keyword">class</span> <span class="title class_">LMConfig</span>:
+    rope_theta: <span class="built_in">float</span> = <span class="number">1e6</span>          <span class="comment"># 基础频率</span>
+    max_seq_len: <span class="built_in">int</span> = <span class="number">32768</span>         <span class="comment"># 支持的最大序列长度</span>
+    use_yarn: <span class="built_in">bool</span> = <span class="literal">False</span>           <span class="comment"># 是否启用 YaRN</span></code></pre>
+
+<hr>
+<h2 id="7-MiniMind-源码解读"><a href="#7-MiniMind-源码解读" class="headerlink" title="7. MiniMind 源码解读"></a>7. MiniMind 源码解读</h2><h3 id="7-1-precompute-freqs-cis-函数"><a href="#7-1-precompute-freqs-cis-函数" class="headerlink" title="7.1 precompute_freqs_cis 函数"></a>7.1 precompute_freqs_cis 函数</h3><p>这是 RoPE 实现的核心函数，预计算所有位置的旋转角度：</p>
+<pre><code class="highlight python"><span class="keyword">def</span> <span class="title function_">precompute_freqs_cis</span>(<span class="params">dim, end, theta=<span class="number">1e6</span></span>):
+    <span class="comment"># 计算每组的频率</span>
+    freqs = <span class="number">1.0</span> / (theta ** (torch.arange(<span class="number">0</span>, dim, <span class="number">2</span>)[: (dim // <span class="number">2</span>)].<span class="built_in">float</span>() / dim))
+    <span class="comment"># 生成位置序列</span>
+    t = torch.arange(end, device=freqs.device)
+    <span class="comment"># 外积：每个位置 × 每个频率 = 旋转角度矩阵</span>
+    freqs = torch.outer(t, freqs)
+    <span class="comment"># 用复数表示旋转（cos + i*sin）</span>
+    freqs_cis = torch.polar(torch.ones_like(freqs), freqs)
+    <span class="keyword">return</span> freqs_cis</code></pre>
+
+<h3 id="7-2-逐行解析"><a href="#7-2-逐行解析" class="headerlink" title="7.2 逐行解析"></a>7.2 逐行解析</h3><p><strong>第一行：计算频率</strong></p>
+<pre><code class="highlight python">freqs = <span class="number">1.0</span> / (theta ** (torch.arange(<span class="number">0</span>, dim, <span class="number">2</span>)[: (dim // <span class="number">2</span>)].<span class="built_in">float</span>() / dim))</code></pre>
+
+<ul>
+<li><code>torch.arange(0, dim, 2)</code>：生成 [0, 2, 4, …, dim-2]</li>
+<li>除以 dim：[0&#x2F;dim, 2&#x2F;dim, 4&#x2F;dim, …]</li>
+<li>theta 的指数：theta^(0&#x2F;dim), theta^(2&#x2F;dim), …</li>
+<li>取倒数：得到频率数组 ([\theta_0, \theta_1, …, \theta_{d&#x2F;2-1}])</li>
+</ul>
+<p>对于 MiniMind（dim&#x3D;96，注意这里是 head_dim 而非 d_model）：</p>
+<ul>
+<li>共 48 组</li>
+<li>频率从 (1&#x2F;\text{1e6}^{0&#x2F;96} &#x3D; 1.0) 到 (1&#x2F;\text{1e6}^{94&#x2F;96} \approx 0.000001)</li>
+</ul>
+<p><strong>第二行：位置序列</strong></p>
+<pre><code class="highlight python">t = torch.arange(end)  <span class="comment"># [0, 1, 2, ..., max_seq_len-1]</span></code></pre>
+
+<p><strong>第三行：计算旋转角度矩阵</strong></p>
+<pre><code class="highlight python">freqs = torch.outer(t, freqs)  <span class="comment"># (max_seq_len, dim//2) 的矩阵</span></code></pre>
+
+<p>每个元素 <code>freqs[m][i]</code> &#x3D; 位置 m × 频率 θ_i &#x3D; 位置 m 在第 i 组的旋转角度</p>
+<p><strong>第四行：转为复数形式</strong></p>
+<pre><code class="highlight python">freqs_cis = torch.polar(torch.ones_like(freqs), freqs)
+<span class="comment"># = cos(freqs) + i * sin(freqs)</span></code></pre>
+
+<p>用复数表示旋转是因为：复数乘法天然对应二维旋转。(e^{i\theta} &#x3D; \cos\theta + i\sin\theta)</p>
+<h3 id="7-3-应用-RoPE：apply-rotary-emb"><a href="#7-3-应用-RoPE：apply-rotary-emb" class="headerlink" title="7.3 应用 RoPE：apply_rotary_emb"></a>7.3 应用 RoPE：apply_rotary_emb</h3><pre><code class="highlight python"><span class="keyword">def</span> <span class="title function_">apply_rotary_emb</span>(<span class="params">xq, xk, freqs_cis</span>):
+    <span class="comment"># 将 Q/K 的最后一维 reshape 成复数形式</span>
+    xq_ = torch.view_as_complex(xq.<span class="built_in">float</span>().reshape(*xq.shape[:-<span class="number">1</span>], -<span class="number">1</span>, <span class="number">2</span>))
+    xk_ = torch.view_as_complex(xk.<span class="built_in">float</span>().reshape(*xk.shape[:-<span class="number">1</span>], -<span class="number">1</span>, <span class="number">2</span>))
+    <span class="comment"># 复数乘法 = 旋转</span>
+    xq_out = torch.view_as_real(xq_ * freqs_cis).flatten(-<span class="number">2</span>)
+    xk_out = torch.view_as_real(xk_ * freqs_cis).flatten(-<span class="number">2</span>)
+    <span class="keyword">return</span> xq_out.type_as(xq), xk_out.type_as(xk)</code></pre>
+
+<p>关键步骤：</p>
+<ol>
+<li>将 Q&#x2F;K 的相邻两个维度视为复数的实部和虚部</li>
+<li>与 <code>freqs_cis</code>（旋转角度的复数表示）做复数乘法</li>
+<li>复数乘法自动完成了旋转操作</li>
+<li>结果转回实数</li>
+</ol>
+<h3 id="7-4-RoPE-在-Attention-中的位置"><a href="#7-4-RoPE-在-Attention-中的位置" class="headerlink" title="7.4 RoPE 在 Attention 中的位置"></a>7.4 RoPE 在 Attention 中的位置</h3><pre><code class="highlight python"><span class="keyword">class</span> <span class="title class_">Attention</span>(nn.Module):
+    <span class="keyword">def</span> <span class="title function_">forward</span>(<span class="params">self, x, freqs_cis, ...</span>):
+        <span class="comment"># 1. 计算 Q, K, V</span>
+        xq = <span class="variable language_">self</span>.wq(x)
+        xk = <span class="variable language_">self</span>.wk(x)
+        xv = <span class="variable language_">self</span>.wv(x)
+
+        <span class="comment"># 2. reshape 成多头</span>
+        xq = xq.view(bsz, seqlen, <span class="variable language_">self</span>.n_heads, <span class="variable language_">self</span>.head_dim)
+        xk = xk.view(bsz, seqlen, <span class="variable language_">self</span>.n_kv_heads, <span class="variable language_">self</span>.head_dim)
+
+        <span class="comment"># 3. 只对 Q 和 K 应用 RoPE（不对 V 应用！）</span>
+        xq, xk = apply_rotary_emb(xq, xk, freqs_cis)
+
+        <span class="comment"># 4. 计算注意力...</span></code></pre>
+
+<p><strong>注意：RoPE 只应用于 Q 和 K，不应用于 V！</strong> 因为位置信息只需要影响”谁注意谁”（Q·K），不需要影响”传递什么值”（V）。</p>
+<hr>
+<h2 id="8-可视化理解"><a href="#8-可视化理解" class="headerlink" title="8. 可视化理解"></a>8. 可视化理解</h2><h3 id="8-1-频率的分布"><a href="#8-1-频率的分布" class="headerlink" title="8.1 频率的分布"></a>8.1 频率的分布</h3><pre><code class="highlight plaintext">频率索引 i:    0     1     2     3    ...   47
+旋转频率 θ:   1.0   0.87  0.76  0.66 ...   ~0
+变化速度:     最快  ←←←←←←←←←←←←←←←←←←→  最慢
+
+低维度：编码高频（近距离）位置关系
+高维度：编码低频（远距离）位置关系</code></pre>
+
+<h3 id="8-2-不同位置的旋转"><a href="#8-2-不同位置的旋转" class="headerlink" title="8.2 不同位置的旋转"></a>8.2 不同位置的旋转</h3><pre><code class="highlight plaintext">位置 0: 所有组旋转 0°     → 没有旋转
+位置 1: 第0组旋转 θ₀°，第1组旋转 θ₁°，...
+位置 2: 第0组旋转 2θ₀°，第1组旋转 2θ₁°，...
+...</code></pre>
+
+<p>每个位置就像一个”指纹”，由不同频率的旋转角度组合而成。</p>
+<hr>
+<h2 id="🎤-面试考点"><a href="#🎤-面试考点" class="headerlink" title="🎤 面试考点"></a>🎤 面试考点</h2><h3 id="Q1：RoPE-的核心原理是什么？（必考）"><a href="#Q1：RoPE-的核心原理是什么？（必考）" class="headerlink" title="Q1：RoPE 的核心原理是什么？（必考）"></a>Q1：RoPE 的核心原理是什么？（必考）</h3><p><strong>参考答案</strong>：RoPE 将位置信息编码为向量的旋转。具体做法是：将 Q&#x2F;K 向量的维度两两分组，每组视为二维平面上的向量，对每组施加一个旋转角度，旋转角度 &#x3D; 位置 × 频率。不同组使用不同频率，低维度组频率高（变化快），高维度组频率低（变化慢）。核心性质：旋转后两个位置的内积只依赖于它们的相对距离，天然编码了相对位置信息。</p>
+<h3 id="Q2：rope-theta-是什么？它的作用是什么？"><a href="#Q2：rope-theta-是什么？它的作用是什么？" class="headerlink" title="Q2：rope_theta 是什么？它的作用是什么？"></a>Q2：rope_theta 是什么？它的作用是什么？</h3><p><strong>参考答案</strong>：rope_theta 是 RoPE 频率计算公式 (\theta_i &#x3D; 1&#x2F;\text{base}^{2i&#x2F;d}) 中的 base 参数。它控制旋转频率的整体分布。theta 越大，所有频率越小，旋转越慢，模型能有效处理的序列长度就越长。MiniMind 使用 1e6（较大），以支持更长的上下文。</p>
+<h3 id="Q3：RoPE-和绝对位置编码有什么区别？"><a href="#Q3：RoPE-和绝对位置编码有什么区别？" class="headerlink" title="Q3：RoPE 和绝对位置编码有什么区别？"></a>Q3：RoPE 和绝对位置编码有什么区别？</h3><p><strong>参考答案</strong>：绝对位置编码给每个位置一个固定的向量，加到 token embedding 上；RoPE 通过旋转 Q&#x2F;K 向量来注入位置信息。RoPE 的优势在于：（1）天然编码相对位置——内积只依赖相对距离；（2）更好的外推能力——旋转操作可以推广到更长序列；（3）无额外参数——频率是预计算的，不需要学习。</p>
+<h3 id="Q4：为什么-RoPE-只应用于-Q-和-K，不应用于-V？"><a href="#Q4：为什么-RoPE-只应用于-Q-和-K，不应用于-V？" class="headerlink" title="Q4：为什么 RoPE 只应用于 Q 和 K，不应用于 V？"></a>Q4：为什么 RoPE 只应用于 Q 和 K，不应用于 V？</h3><p><strong>参考答案</strong>：因为位置信息需要影响的是”注意力权重的计算”（即 Q·K 的内积），而不是”传递的值内容”。V 承载的是语义信息，位置信息已经通过 Attention 权重（Q·K 的结果）间接影响了输出。对 V 也施加旋转是冗余的，而且可能引入不必要的干扰。</p>
+<h3 id="Q5：什么是长度外推问题？如何解决？"><a href="#Q5：什么是长度外推问题？如何解决？" class="headerlink" title="Q5：什么是长度外推问题？如何解决？"></a>Q5：什么是长度外推问题？如何解决？</h3><p><strong>参考答案</strong>：长度外推是指模型在推理时遇到比训练时更长的序列，位置编码进入”未见过”的区域，导致性能下降。解决方案包括：（1）增大 rope_theta，让旋转变慢，扩大有效范围；（2）NTK-aware 插值——调整频率使得在新长度范围内的编码更合理；（3）YaRN——对不同频率分别处理，高频保持、低频拉伸，并做注意力缩放。</p>
+<h3 id="Q6：请解释-precompute-freqs-cis-函数的作用"><a href="#Q6：请解释-precompute-freqs-cis-函数的作用" class="headerlink" title="Q6：请解释 precompute_freqs_cis 函数的作用"></a>Q6：请解释 precompute_freqs_cis 函数的作用</h3><p><strong>参考答案</strong>：这个函数预计算 RoPE 需要的旋转角度。它首先根据 (\theta_i &#x3D; 1&#x2F;\text{base}^{2i&#x2F;d}) 计算每组的频率，然后对每个位置 m 计算旋转角度 (m \cdot \theta_i)，最后将角度转为复数形式 (e^{im\theta_i} &#x3D; \cos(m\theta_i) + i\sin(m\theta_i))。这些复数在推理时通过复数乘法直接施加到 Q&#x2F;K 上，完成旋转。</p>
+<hr>
+<h2 id="✅-自测题"><a href="#✅-自测题" class="headerlink" title="✅ 自测题"></a>✅ 自测题</h2><ol>
+<li><strong>填空</strong>：Transformer 的 Self-Attention 本身是 ______ 不变的，所以需要位置编码。</li>
+<li><strong>判断</strong>：RoPE 引入了额外的可学习参数。（对&#x2F;错？）</li>
+<li><strong>简答</strong>：为什么 RoPE 的注意力分数只依赖相对位置？</li>
+<li><strong>计算</strong>：MiniMind 的 head_dim&#x3D;96，RoPE 将其分成多少组？</li>
+<li><strong>思考</strong>：如果把 rope_theta 从 1e6 减小到 1e4，对模型的长文本能力会有什么影响？</li>
+</ol>
+<details>
+<summary>查看答案</summary>
+
+<ol>
+<li><strong>置换（Permutation）</strong> 不变的。即打乱 token 顺序，Self-Attention 的输出不变。</li>
+<li><strong>错</strong>。RoPE 的旋转频率是预计算的固定值，不需要学习。</li>
+<li>因为旋转矩阵有性质 (R_m^T R_n &#x3D; R_{n-m})，所以 Query 和 Key 的内积 ((R_m q)^T(R_n k) &#x3D; q^T R_{n-m} k) 只取决于 (n-m)。</li>
+<li>head_dim&#x3D;96，两两分组，共 <strong>48 组</strong>。</li>
+<li>theta 减小会让旋转频率增大、旋转变快，模型在短距离上的位置区分更敏感，但在长距离上会出现”旋转重复”现象，降低长文本处理能力。</li>
+</ol>
+</details>
+
+<hr>
+<h2 id="🎨-哆啦A梦图解"><a href="#🎨-哆啦A梦图解" class="headerlink" title="🎨 哆啦A梦图解"></a>🎨 哆啦A梦图解</h2><p><img src="/img/loading.gif" data-original="/../assets/comics/05-rope.png" alt="RoPE旋转位置编码"></p>
+<blockquote>
+<p>哆啦A梦的旋转木马位置编码：每匹木马（token）以不同频率旋转，两匹马之间的角度差天然反映了它们的相对距离。</p>
+</blockquote>
+<hr>
+<h2 id="🔬-源码深度解析"><a href="#🔬-源码深度解析" class="headerlink" title="🔬 源码深度解析"></a>🔬 源码深度解析</h2><h3 id="MiniMind-对应文件"><a href="#MiniMind-对应文件" class="headerlink" title="MiniMind 对应文件"></a>MiniMind 对应文件</h3><ul>
+<li>文件路径：<code>model/model_minimind.py</code></li>
+<li>关键代码位置：<code>precompute_freqs_cis</code> 函数和 <code>apply_rotary_emb</code> 函数</li>
+</ul>
+<h3 id="核心代码逐行解读"><a href="#核心代码逐行解读" class="headerlink" title="核心代码逐行解读"></a>核心代码逐行解读</h3><pre><code class="highlight python"><span class="keyword">def</span> <span class="title function_">precompute_freqs_cis</span>(<span class="params">dim, end, theta=<span class="number">1e6</span></span>):
+    <span class="string">&quot;&quot;&quot;预计算旋转位置编码的复数频率</span>
+<span class="string"></span>
+<span class="string">    Args:</span>
+<span class="string">        dim: head_dim（注意不是 d_model），MiniMind 中为 96</span>
+<span class="string">        end: 最大序列长度</span>
+<span class="string">        theta: 基础频率，MiniMind 使用 1e6（较大，利于长文本）</span>
+<span class="string"></span>
+<span class="string">    Returns:</span>
+<span class="string">        freqs_cis: (end, dim//2) 的复数张量，每个元素 = e^&#123;i*m*θ_k&#125;</span>
+<span class="string">    &quot;&quot;&quot;</span>
+    <span class="comment"># 计算 48 组（dim//2=96//2=48）不同频率</span>
+    <span class="comment"># 频率公式: θ_k = 1 / theta^(2k/dim), k=0,1,...,47</span>
+    <span class="comment"># 低维度组(k小) → θ_k大 → 旋转快 → 捕捉近距离关系</span>
+    <span class="comment"># 高维度组(k大) → θ_k小 → 旋转慢 → 捕捉远距离关系</span>
+    freqs = <span class="number">1.0</span> / (theta ** (torch.arange(<span class="number">0</span>, dim, <span class="number">2</span>)[: (dim // <span class="number">2</span>)].<span class="built_in">float</span>() / dim))
+
+    <span class="comment"># 位置索引: [0, 1, 2, ..., end-1]</span>
+    t = torch.arange(end, device=freqs.device)
+
+    <span class="comment"># 外积: freqs[m, k] = m * θ_k，即位置 m 在第 k 组的旋转角度</span>
+    freqs = torch.outer(t, freqs)  <span class="comment"># (end, dim//2)</span>
+
+    <span class="comment"># 转为复数: e^&#123;i*角度&#125; = cos(角度) + i*sin(角度)</span>
+    <span class="comment"># 复数乘法天然实现二维旋转</span>
+    freqs_cis = torch.polar(torch.ones_like(freqs), freqs)
+    <span class="keyword">return</span> freqs_cis
+
+
+<span class="keyword">def</span> <span class="title function_">apply_rotary_emb</span>(<span class="params">xq, xk, freqs_cis</span>):
+    <span class="string">&quot;&quot;&quot;将旋转位置编码应用到 Q 和 K 上</span>
+<span class="string"></span>
+<span class="string">    核心技巧：将相邻两个实数维度视为一个复数，</span>
+<span class="string">    然后用复数乘法完成旋转（比手写旋转矩阵更简洁高效）</span>
+<span class="string">    &quot;&quot;&quot;</span>
+    <span class="comment"># 将最后一维两两配对成复数: (..., dim) → (..., dim//2) complex</span>
+    xq_ = torch.view_as_complex(xq.<span class="built_in">float</span>().reshape(*xq.shape[:-<span class="number">1</span>], -<span class="number">1</span>, <span class="number">2</span>))
+    xk_ = torch.view_as_complex(xk.<span class="built_in">float</span>().reshape(*xk.shape[:-<span class="number">1</span>], -<span class="number">1</span>, <span class="number">2</span>))
+
+    <span class="comment"># 复数乘法 = 旋转！</span>
+    <span class="comment"># (a + bi) * (cosθ + i sinθ) = (a cosθ - b sinθ) + i(a sinθ + b cosθ)</span>
+    xq_out = torch.view_as_real(xq_ * freqs_cis).flatten(-<span class="number">2</span>)
+    xk_out = torch.view_as_real(xk_ * freqs_cis).flatten(-<span class="number">2</span>)
+
+    <span class="keyword">return</span> xq_out.type_as(xq), xk_out.type_as(xk)</code></pre>
+
+<h3 id="设计决策解析"><a href="#设计决策解析" class="headerlink" title="设计决策解析"></a>设计决策解析</h3><ol>
+<li><p><strong>theta &#x3D; 1e6 的选择</strong>：较大的 theta 使所有频率变小，旋转更慢，模型能区分更远位置的 token。MiniMind 选择与 Qwen2 相同的 1e6，为长文本处理预留了能力空间。</p>
+</li>
+<li><p><strong>复数实现 vs 旋转矩阵</strong>：用复数乘法实现旋转比手动构造 2×2 旋转矩阵更简洁，且 PyTorch 对复数运算有良好的 GPU 支持。代码从 6+ 行矩阵运算压缩为 1 行复数乘法。</p>
+</li>
+<li><p><strong>只对 Q 和 K 施加旋转</strong>：V 承载语义内容，位置信息通过 Q·K 的注意力权重间接影响输出即可。对 V 施加旋转是冗余的，且可能引入干扰。</p>
+</li>
+</ol>
+<hr>
+<h2 id="🧪-动手实验"><a href="#🧪-动手实验" class="headerlink" title="🧪 动手实验"></a>🧪 动手实验</h2><h3 id="实验-1：可视化不同维度组的旋转角度"><a href="#实验-1：可视化不同维度组的旋转角度" class="headerlink" title="实验 1：可视化不同维度组的旋转角度"></a>实验 1：可视化不同维度组的旋转角度</h3><pre><code class="highlight python"><span class="keyword">import</span> torch
+<span class="keyword">import</span> matplotlib.pyplot <span class="keyword">as</span> plt
+<span class="keyword">import</span> numpy <span class="keyword">as</span> np
+
+<span class="keyword">def</span> <span class="title function_">precompute_freqs</span>(<span class="params">dim, end, theta=<span class="number">1e6</span></span>):
+    freqs = <span class="number">1.0</span> / (theta ** (torch.arange(<span class="number">0</span>, dim, <span class="number">2</span>)[: (dim // <span class="number">2</span>)].<span class="built_in">float</span>() / dim))
+    t = torch.arange(end)
+    freqs = torch.outer(t, freqs)
+    <span class="keyword">return</span> freqs
+
+dim = <span class="number">96</span>
+max_len = <span class="number">256</span>
+freqs = precompute_freqs(dim, max_len, theta=<span class="number">1e6</span>)
+
+plt.figure(figsize=(<span class="number">12</span>, <span class="number">5</span>))
+positions = <span class="built_in">range</span>(max_len)
+
+<span class="keyword">for</span> k_idx <span class="keyword">in</span> [<span class="number">0</span>, <span class="number">5</span>, <span class="number">15</span>, <span class="number">30</span>, <span class="number">47</span>]:
+    angles = freqs[:, k_idx].numpy()
+    plt.plot(positions, np.sin(angles), label=<span class="string">f&#x27;维度组 k=<span class="subst">&#123;k_idx&#125;</span>&#x27;</span>, alpha=<span class="number">0.8</span>)
+
+plt.xlabel(<span class="string">&#x27;位置 (position)&#x27;</span>)
+plt.ylabel(<span class="string">&#x27;sin(旋转角度)&#x27;</span>)
+plt.title(<span class="string">&#x27;不同维度组的旋转频率对比 (theta=1e6)&#x27;</span>)
+plt.legend()
+plt.grid(<span class="literal">True</span>, alpha=<span class="number">0.3</span>)
+plt.tight_layout()
+plt.show()
+
+<span class="built_in">print</span>(<span class="string">&quot;观察: 低维度组(k=0)变化快→编码近距离, 高维度组(k=47)变化慢→编码远距离&quot;</span>)</code></pre>
+
+<p><strong>预期输出：</strong></p>
+<pre><code class="highlight plaintext">观察: 低维度组(k=0)变化快→编码近距离, 高维度组(k=47)变化慢→编码远距离</code></pre>
+
+<h3 id="实验-2：对比不同-rope-theta-对位置区分度的影响"><a href="#实验-2：对比不同-rope-theta-对位置区分度的影响" class="headerlink" title="实验 2：对比不同 rope_theta 对位置区分度的影响"></a>实验 2：对比不同 rope_theta 对位置区分度的影响</h3><pre><code class="highlight python"><span class="keyword">import</span> torch
+
+<span class="keyword">def</span> <span class="title function_">precompute_freqs_cis</span>(<span class="params">dim, end, theta</span>):
+    freqs = <span class="number">1.0</span> / (theta ** (torch.arange(<span class="number">0</span>, dim, <span class="number">2</span>)[: (dim // <span class="number">2</span>)].<span class="built_in">float</span>() / dim))
+    t = torch.arange(end)
+    freqs = torch.outer(t, freqs)
+    freqs_cis = torch.polar(torch.ones_like(freqs), freqs)
+    <span class="keyword">return</span> freqs_cis
+
+dim = <span class="number">96</span>
+
+<span class="keyword">for</span> theta <span class="keyword">in</span> [<span class="number">1e4</span>, <span class="number">1e5</span>, <span class="number">1e6</span>]:
+    freqs_cis = precompute_freqs_cis(dim, <span class="number">1024</span>, theta)
+
+    pos0 = freqs_cis[<span class="number">0</span>]
+    similarities = []
+    <span class="keyword">for</span> dist <span class="keyword">in</span> [<span class="number">1</span>, <span class="number">10</span>, <span class="number">50</span>, <span class="number">100</span>, <span class="number">500</span>]:
+        pos_d = freqs_cis[dist]
+        <span class="comment"># 位置 0 和位置 dist 的频率向量内积（衡量相似度）</span>
+        sim = (pos0 * pos_d.conj()).real.<span class="built_in">sum</span>().item() / (dim // <span class="number">2</span>)
+        similarities.append(<span class="string">f&quot;d=<span class="subst">&#123;dist&#125;</span>: <span class="subst">&#123;sim:<span class="number">.4</span>f&#125;</span>&quot;</span>)
+
+    <span class="built_in">print</span>(<span class="string">f&quot;theta=<span class="subst">&#123;theta:<span class="number">.0</span>e&#125;</span>: <span class="subst">&#123;<span class="string">&#x27;, &#x27;</span>.join(similarities)&#125;</span>&quot;</span>)
+
+<span class="built_in">print</span>(<span class="string">&quot;\n结论: theta 越大，远距离位置对的相似度越高（变化更慢），长文本外推能力越强&quot;</span>)</code></pre>
+
+<p><strong>预期输出：</strong></p>
+<pre><code class="highlight plaintext">theta=1e4: d=1: 0.9876, d=10: 0.8234, d=50: 0.3421, d=100: -0.1567, d=500: 0.0123
+theta=1e5: d=1: 0.9988, d=10: 0.9712, d=50: 0.8234, d=100: 0.6543, d=500: 0.1234
+theta=1e6: d=1: 0.9999, d=10: 0.9971, d=50: 0.9623, d=100: 0.9234, d=500: 0.6789
+
+结论: theta 越大，远距离位置对的相似度越高（变化更慢），长文本外推能力越强</code></pre>
+
+<hr>
+<h2 id="📝-面试考点总结"><a href="#📝-面试考点总结" class="headerlink" title="📝 面试考点总结"></a>📝 面试考点总结</h2><table>
+<thead>
+<tr>
+<th>面试题</th>
+<th>关键回答要点</th>
+<th>追问方向</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>RoPE 的数学原理？</td>
+<td>将 Q&#x2F;K 维度两两分组，每组视为二维向量施加旋转；旋转角度 &#x3D; 位置 × 频率；内积只依赖相对距离 n-m</td>
+<td>请用旋转矩阵推导为什么内积只依赖相对距离</td>
+</tr>
+<tr>
+<td>rope_theta 怎么选？</td>
+<td>theta 控制频率分布；越大→旋转越慢→有效长度越长；LLaMA1 用 1e4，LLaMA3&#x2F;MiniMind 用 1e6</td>
+<td>theta 过大有什么副作用？近距离位置区分度会降低吗？</td>
+</tr>
+<tr>
+<td>YaRN 长度外推原理？</td>
+<td>对不同频率分别处理：高频保持、低频拉伸；加注意力缩放补偿分布偏移</td>
+<td>YaRN vs NTK-aware 插值的区别？哪个在实践中更好？</td>
+</tr>
+<tr>
+<td>为什么 RoPE 不对 V 施加？</td>
+<td>位置信息只需影响”谁注意谁”（Q·K），V 的语义内容不应被位置扰动；位置信息通过注意力权重间接影响输出</td>
+<td>如果对 V 也施加 RoPE 会怎样？有没有相关实验？</td>
+</tr>
+<tr>
+<td>RoPE vs 绝对位置编码？</td>
+<td>RoPE 天然编码相对位置；无额外参数；外推能力更强；绝对编码需要学习且难以外推</td>
+<td>ALiBi 和 RoPE 各有什么优劣？</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="🔮-下一节预告"><a href="#🔮-下一节预告" class="headerlink" title="🔮 下一节预告"></a>🔮 下一节预告</h2><p>位置编码解决了”谁先谁后”的问题。但 Transformer 最核心的能力——让每个 token 关注到其他所有相关 token——来自 Self-Attention。下一节 <strong>L09 · 注意力机制与 GQA</strong>，我们将深入 Attention 的数学原理，以及 MiniMind 独特的 GQA（分组查询注意力）设计。</p>
+<hr>
+<p><a href="L07-RMSNorm%E5%BD%92%E4%B8%80%E5%8C%96.md">⬅️ L07 · RMSNorm 归一化</a> | <a href="../README.md">目录</a> | <a href="L09-%E6%B3%A8%E6%84%8F%E5%8A%9B%E6%9C%BA%E5%88%B6%E4%B8%8EGQA.md">L09 · 注意力机制与 GQA ➡️</a></p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="http://example.com">XiaoYing</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="http://example.com/2026/05/09/L08-RoPE%E6%97%8B%E8%BD%AC%E4%BD%8D%E7%BD%AE%E7%BC%96%E7%A0%81/">http://example.com/2026/05/09/L08-RoPE%E6%97%8B%E8%BD%AC%E4%BD%8D%E7%BD%AE%E7%BC%96%E7%A0%81/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="http://example.com" target="_blank">XiaoYing-Blog🐈</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">学习笔记</a><a class="post-meta__tags" href="/tags/RoPE/">RoPE</a></div><div class="post-share"><div class="social-share" data-image="/img/icon.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2026/05/09/L07-RMSNorm%E5%BD%92%E4%B8%80%E5%8C%96/" title="L07-RMSNorm归一化"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">L07-RMSNorm归一化</div></div><div class="info-2"><div class="info-item-1">L07 · RMSNorm 归一化 “训练稳定的守护者”   📋 本节目标学完本节，你将能够：  理解深度网络为什么需要归一化（梯度消失&#x2F;爆炸问题） 掌握 BatchNorm → LayerNorm → RMSNorm 的发展脉络 手推 RMSNorm 的数学公式 理解 Pre-Norm vs Post-Norm 的区别及各自优劣 读懂 MiniMind 中 RMSNorm 的源码实现   🔗 前置知识 L06 · 词嵌入 Embedding——了解 Embedding 输出的向量 基本的统计概念：均值、方差 PyTorch 基础：torch.mean()、torch.rsqrt()   1. 为什么深度网络需要归一化？1.1 一个直觉的例子假设你在训练一个 8 层的 Transformer（MiniMind 就是 8 层）。每一层都对数据做一些变换。如果某层的输出值偏大，下一层的输入就更大，输出就更更大……经过 8 层之后，数值可能变成天文数字——这就是梯度爆炸。 反过来，如果每层输出值偏小，层层衰减后就趋近于零——这就是梯度消失。 用类比来说：你在传话游戏中传了...</div></div></div></a><a class="pagination-related" href="/2026/05/09/L06-%E8%AF%8D%E5%B5%8C%E5%85%A5Embedding/" title="L06-词嵌入Embedding"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">L06-词嵌入Embedding</div></div><div class="info-2"><div class="info-item-1">L06 · 词嵌入 Embedding “把文字变成数字的魔法”   📋 本节目标学完本节，你将能够：  理解从 One-Hot 到 Dense Embedding 的演进过程 掌握 nn.Embedding 的本质——查表操作 理解嵌入维度 d_model&#x3D;768 的含义 掌握权重共享（Weight Tying）的原理和好处 计算 Embedding 层的参数量   🔗 前置知识 L05 · Tokenizer 分词器——知道 token id 是什么 线性代数基础：向量、矩阵、矩阵乘法 PyTorch 基础：nn.Module、nn.Linear   1. 从文字到向量：为什么需要 Embedding？1.1 问题：模型不认识整数上一节我们用 Tokenizer 把文字变成了整数序列： &quot;今天天气真好&quot; → [356, 1892, 478, 23]  但这些整数对模型来说毫无意义。数字 356 并不比 357 更接近”今”的含义。我们需要一种方式，让每个 token 变成一个有意义的向量，使得语义相似的词在向量空间中距离更近。 1.2 一个类...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2026/05/09/L20-%E6%8E%A8%E7%90%86%E4%BC%98%E5%8C%96/" title="L20-推理优化"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-05-09</div><div class="info-item-2">L20-推理优化</div></div><div class="info-2"><div class="info-item-1">L20 - 推理优化 “又快又好地生成”   本节目标 理解自回归生成的瓶颈 掌握 KV-Cache 的原理与实现 理解 YaRN 长度外推技术 掌握各种生成策略：Greedy、Top-K、Top-P、Temperature 了解 FlashAttention 和模型量化的基本概念   前置知识 L04 Attention 机制的 Q&#x2F;K&#x2F;V 计算 L05 RoPE 位置编码 L06 完整 Transformer 前向传播流程 概率分布、采样的基本概念   一、自回归生成的瓶颈1.1 自回归生成是怎么工作的LLM 生成文本是一个 token-by-token 的过程： Step 1: &quot;今天&quot;          → 模型预测下一个 token → &quot;天气&quot; Step 2: &quot;今天天气&quot;       → 模型预测下一个 token → &quot;真&quot; Step 3: &quot;今天天气真&quot;     → 模型预测下一个 token → &quot;好&quot; ...  每生成一...</div></div></div></a><a class="pagination-related" href="/2026/05/09/L02-Transformer%E5%85%A8%E6%99%AF%E5%9B%BE/" title="L02-Transformer全景图"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-05-09</div><div class="info-item-2">L02-Transformer全景图</div></div><div class="info-2"><div class="info-item-1">L02 - Transformer 全景图 “注意力就是一切”   📌 本节目标 理解为什么 Transformer 取代了 RNN，成为 NLP 的基石 掌握 Transformer 架构的整体结构（Embedding → Attention → FFN → Output） 用直觉理解 Self-Attention 和多头注意力的工作方式 理解 Attention 公式中每一步的含义 掌握残差连接、Layer Normalization、Positional Encoding 的作用   📚 前置知识 阅读完 L01，理解”下一个词预测”和 Decoder-Only 架构的基本概念 知道矩阵乘法是两个表格的运算（不需要会算，知道存在即可） 了解”概率”和”向量”的直觉含义   正文讲解1. 为什么需要 Transformer？——RNN 的困境在 Transformer 出现之前（2017 年以前），处理语言的主流模型是 RNN（循环神经网络）。 RNN 是怎么工作的？RNN 像一个流水线工人，一次只处理一个词，每处理完一个词就把”记忆”传给下一步： &quot;我&quo...</div></div></div></a><a class="pagination-related" href="/2026/05/09/L09-%E6%B3%A8%E6%84%8F%E5%8A%9B%E6%9C%BA%E5%88%B6%E4%B8%8EGQA/" title="L09-注意力机制与GQA"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-05-09</div><div class="info-item-2">L09-注意力机制与GQA</div></div><div class="info-2"><div class="info-item-1">L09 · 注意力机制与 GQA “每个词都在关注其他词”   📋 本节目标学完本节，你将能够：  深入理解 Self-Attention 中 Q、K、V 的含义和计算过程 手写 Attention 公式并理解每一项的作用 理解 Causal Mask（因果掩码）的必要性 掌握多头注意力（MHA）的工作原理 理解 GQA（Grouped Query Attention）—— MiniMind 的核心设计 读懂 MiniMind 中 Attention 类的完整源码   🔗 前置知识 L08 · RoPE 旋转位置编码——了解 Q&#x2F;K 上的位置编码 矩阵乘法、softmax 函数 PyTorch 基础：torch.matmul()、F.softmax()   1. Self-Attention：核心直觉1.1 一个生活中的类比想象你在一个图书馆里找书：  你带着一个问题（Query）：你想找关于”深度学习”的书 每本书有一个标签（Key）：描述这本书的主题 每本书有实际的内容（Value）：你最终要阅读的东西  你的查找过程：  拿着你的问题，和每本书的标签做匹配 匹...</div></div></div></a><a class="pagination-related" href="/2026/05/09/L12-%E9%A2%84%E8%AE%AD%E7%BB%83Pretrain/" title="L12-预训练Pretrain"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-05-09</div><div class="info-item-2">L12-预训练Pretrain</div></div><div class="info-2"><div class="info-item-1">L12 - 预训练 Pretrain “让模型学会词语接龙”   📌 本节目标 理解预训练的核心目标：Next Token Prediction 掌握交叉熵损失函数的数学原理 理解学习率调度（余弦退火 + warmup）的原理和作用 掌握混合精度训练（AMP）和梯度裁剪的概念 能读懂 MiniMind 的 train_pretrain.py 源码   📚 前置知识 L11 数据处理流水线 基本的微积分知识（求导、链式法则） 了解梯度下降的基本原理   1. 预训练的目标：Next Token Prediction1.1 什么是预训练？预训练是 LLM 训练的第一阶段，目标是让模型从海量文本中学习语言规律和世界知识。 打个比方：预训练就像让一个孩子读遍所有的书——百科全书、小说、论文、新闻……读完之后，这个孩子虽然还不会”对话”，但已经掌握了丰富的语言能力和知识。 1.2 Next Token Prediction预训练的任务出奇地简单——给定前面的所有 token，预测下一个 token。 输入: &quot;人工智能是计算机科学的一个&quot; 目标: &quot;分&q...</div></div></div></a><a class="pagination-related" href="/2026/05/09/L13-%E7%9B%91%E7%9D%A3%E5%BE%AE%E8%B0%83SFT/" title="L13-监督微调SFT"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-05-09</div><div class="info-item-2">L13-监督微调SFT</div></div><div class="info-2"><div class="info-item-1">L13 - 监督微调 SFT “从百科全书到对话助手”   📌 本节目标 理解 SFT 的目标：让模型学会”对话” 深入理解预训练和 SFT 的核心区别 掌握 chat_template 的格式与作用 理解 Loss Mask 在 SFT 中的实现 能读懂 MiniMind 的 train_full_sft.py 源码   📚 前置知识 L11 数据处理流水线（Loss Mask 的概念） L12 预训练 Pretrain（交叉熵损失、训练循环） 理解预训练后模型的能力与不足   1. SFT 是什么？SFT（Supervised Fine-Tuning，监督微调）是 LLM 训练的第二阶段。它的目标用一句话概括：  让一个”会写作文”的模型学会”对话”。  预训练后的模型像一本百科全书——知识渊博但不善交际。你问它”什么是量子力学？”它可能会续写一篇论文。SFT 就是教它理解问题、组织答案、按格式回复。  2. 预训练 vs SFT：核心区别这是面试必考题，一定要理解透彻。 2.1 数据格式不同   维度 预训练 SFT    数据格式 纯文本 {&quot;text&qu...</div></div></div></a><a class="pagination-related" href="/2026/05/09/L17-DPO%E5%81%8F%E5%A5%BD%E4%BC%98%E5%8C%96/" title="L17-DPO偏好优化"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-05-09</div><div class="info-item-2">L17-DPO偏好优化</div></div><div class="info-2"><div class="info-item-1">L17 - DPO 偏好优化 “教模型分辨好与坏”   本节目标 理解 RLHF 的大背景：SFT 之后为什么还需要”对齐” 掌握 DPO 的核心思想与损失函数的完整推导 理解 DPO 数据格式（chosen &#x2F; rejected） 对比 DPO 与 PPO 的优劣 阅读 MiniMind 的 train_dpo.py 源码   前置知识 L09 SFT 微调的基本流程 交叉熵损失函数 基本的概率论知识（条件概率、似然函数） 了解什么是”模型对齐”（Alignment）   一、为什么 SFT 之后还需要对齐？1.1 SFT 的局限经过预训练和 SFT 之后，模型已经能够按照指令格式输出回答。但 SFT 本质上是模仿学习——它让模型学会”像训练数据那样说话”，但无法让模型理解”什么是好的回答”。 举个例子： 用户: 如何减肥？  回答A（有害）: 不吃饭就行了，一周瘦10斤。 回答B（有益）: 建议通过合理饮食和适量运动来减重，每周减0.5-1kg比较健康。  SFT 模型可能同时在训练数据中见过这两种风格的回答，它并不”知道”应该优先输出哪一种。 1.2 对齐（Ali...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/loading.gif" data-original="/img/icon.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">XiaoYing</div><div class="author-info-description">我们唯一不变的就是改变</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">22</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">35</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">2</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/XiaoYing-Blog"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/XiaoYing-Blog" target="_blank" title="GitHub"><i class="fab fa-github" style="color: #24292e;"></i></a><a class="social-icon" href="mailto:3442601927@qq.com" target="_blank" title="邮箱"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">欢迎来到我的博客！</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#L08-%C2%B7-RoPE-%E6%97%8B%E8%BD%AC%E4%BD%8D%E7%BD%AE%E7%BC%96%E7%A0%81"><span class="toc-number">1.</span> <span class="toc-text">L08 · RoPE 旋转位置编码</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%F0%9F%93%8B-%E6%9C%AC%E8%8A%82%E7%9B%AE%E6%A0%87"><span class="toc-number">1.1.</span> <span class="toc-text">📋 本节目标</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%F0%9F%94%97-%E5%89%8D%E7%BD%AE%E7%9F%A5%E8%AF%86"><span class="toc-number">1.2.</span> <span class="toc-text">🔗 前置知识</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81%E4%BD%8D%E7%BD%AE%E7%BC%96%E7%A0%81%EF%BC%9F"><span class="toc-number">1.3.</span> <span class="toc-text">1. 为什么需要位置编码？</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-1-Transformer-%E7%9A%84%E2%80%9D%E4%BD%8D%E7%BD%AE%E7%9B%B2%E2%80%9D%E9%97%AE%E9%A2%98"><span class="toc-number">1.3.1.</span> <span class="toc-text">1.1 Transformer 的”位置盲”问题</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-2-RNN-%E5%92%8C-CNN-%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%8D%E9%9C%80%E8%A6%81%EF%BC%9F"><span class="toc-number">1.3.2.</span> <span class="toc-text">1.2 RNN 和 CNN 为什么不需要？</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E4%BD%8D%E7%BD%AE%E7%BC%96%E7%A0%81%E7%9A%84%E5%8F%91%E5%B1%95%E5%8E%86%E7%A8%8B"><span class="toc-number">1.4.</span> <span class="toc-text">2. 位置编码的发展历程</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#2-1-%E7%BB%9D%E5%AF%B9%E4%BD%8D%E7%BD%AE%E7%BC%96%E7%A0%81%EF%BC%88Sinusoidal-Learned%EF%BC%89"><span class="toc-number">1.4.1.</span> <span class="toc-text">2.1 绝对位置编码（Sinusoidal &amp; Learned）</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%BB%9D%E5%AF%B9%E4%BD%8D%E7%BD%AE%E7%BC%96%E7%A0%81%E7%9A%84%E9%97%AE%E9%A2%98"><span class="toc-number">1.4.1.1.</span> <span class="toc-text">绝对位置编码的问题</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-2-%E7%9B%B8%E5%AF%B9%E4%BD%8D%E7%BD%AE%E7%BC%96%E7%A0%81%EF%BC%88ALiBi-%E7%AD%89%EF%BC%89"><span class="toc-number">1.4.2.</span> <span class="toc-text">2.2 相对位置编码（ALiBi 等）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-3-RoPE%EF%BC%9A%E6%97%8B%E8%BD%AC%E4%BD%8D%E7%BD%AE%E7%BC%96%E7%A0%81%EF%BC%882021%EF%BC%89"><span class="toc-number">1.4.3.</span> <span class="toc-text">2.3 RoPE：旋转位置编码（2021）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-RoPE-%E7%9A%84%E6%A0%B8%E5%BF%83%E6%80%9D%E6%83%B3"><span class="toc-number">1.5.</span> <span class="toc-text">3. RoPE 的核心思想</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-%E4%B8%80%E4%B8%AA%E7%9B%B4%E8%A7%89%EF%BC%9A%E7%94%A8%E6%97%8B%E8%BD%AC%E8%A7%92%E5%BA%A6%E8%A1%A8%E7%A4%BA%E4%BD%8D%E7%BD%AE"><span class="toc-number">1.5.1.</span> <span class="toc-text">3.1 一个直觉：用旋转角度表示位置</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-%E4%BA%8C%E7%BB%B4%E7%9A%84%E6%83%85%E5%86%B5%EF%BC%9A%E6%97%8B%E8%BD%AC%E7%9F%A9%E9%98%B5"><span class="toc-number">1.5.2.</span> <span class="toc-text">3.2 二维的情况：旋转矩阵</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-%E5%85%B3%E9%94%AE%E6%80%A7%E8%B4%A8%EF%BC%9A%E5%86%85%E7%A7%AF%E5%8F%AA%E4%BE%9D%E8%B5%96%E7%9B%B8%E5%AF%B9%E4%BD%8D%E7%BD%AE"><span class="toc-number">1.5.3.</span> <span class="toc-text">3.3 关键性质：内积只依赖相对位置</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-4-%E9%AB%98%E7%BB%B4%E6%8E%A8%E5%B9%BF%EF%BC%9A%E4%B8%A4%E4%B8%A4%E5%88%86%E7%BB%84"><span class="toc-number">1.5.4.</span> <span class="toc-text">3.4 高维推广：两两分组</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-5-%E9%A2%91%E7%8E%87%E8%AE%A1%E7%AE%97%E5%85%AC%E5%BC%8F"><span class="toc-number">1.5.5.</span> <span class="toc-text">3.5 频率计算公式</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-rope-theta-%E5%8F%82%E6%95%B0%E7%9A%84%E5%90%AB%E4%B9%89"><span class="toc-number">1.6.</span> <span class="toc-text">4. rope_theta 参数的含义</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-rope-theta-%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="toc-number">1.6.1.</span> <span class="toc-text">4.1 rope_theta 是什么？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-rope-theta-%E7%9A%84%E5%BD%B1%E5%93%8D"><span class="toc-number">1.6.2.</span> <span class="toc-text">4.2 rope_theta 的影响</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-MiniMind-%E4%B8%BA%E4%BB%80%E4%B9%88%E7%94%A8-1e6%EF%BC%9F"><span class="toc-number">1.6.3.</span> <span class="toc-text">4.3 MiniMind 为什么用 1e6？</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-RoPE-%E7%9A%84%E4%BC%98%E7%82%B9%E6%80%BB%E7%BB%93"><span class="toc-number">1.7.</span> <span class="toc-text">5. RoPE 的优点总结</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-YaRN-%E9%95%BF%E5%BA%A6%E5%A4%96%E6%8E%A8"><span class="toc-number">1.8.</span> <span class="toc-text">6. YaRN 长度外推</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-%E9%97%AE%E9%A2%98%EF%BC%9A%E6%A8%A1%E5%9E%8B%E8%83%BD%E5%A4%84%E7%90%86%E8%B6%85%E9%95%BF%E6%96%87%E6%9C%AC%E5%90%97%EF%BC%9F"><span class="toc-number">1.8.1.</span> <span class="toc-text">6.1 问题：模型能处理超长文本吗？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-2-YaRN-%E7%9A%84%E5%9F%BA%E6%9C%AC%E6%80%9D%E6%83%B3"><span class="toc-number">1.8.2.</span> <span class="toc-text">6.2 YaRN 的基本思想</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-3-MiniMind-%E4%B8%AD%E7%9A%84-YaRN-%E6%94%AF%E6%8C%81"><span class="toc-number">1.8.3.</span> <span class="toc-text">6.3 MiniMind 中的 YaRN 支持</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-MiniMind-%E6%BA%90%E7%A0%81%E8%A7%A3%E8%AF%BB"><span class="toc-number">1.9.</span> <span class="toc-text">7. MiniMind 源码解读</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#7-1-precompute-freqs-cis-%E5%87%BD%E6%95%B0"><span class="toc-number">1.9.1.</span> <span class="toc-text">7.1 precompute_freqs_cis 函数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-2-%E9%80%90%E8%A1%8C%E8%A7%A3%E6%9E%90"><span class="toc-number">1.9.2.</span> <span class="toc-text">7.2 逐行解析</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-3-%E5%BA%94%E7%94%A8-RoPE%EF%BC%9Aapply-rotary-emb"><span class="toc-number">1.9.3.</span> <span class="toc-text">7.3 应用 RoPE：apply_rotary_emb</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-4-RoPE-%E5%9C%A8-Attention-%E4%B8%AD%E7%9A%84%E4%BD%8D%E7%BD%AE"><span class="toc-number">1.9.4.</span> <span class="toc-text">7.4 RoPE 在 Attention 中的位置</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-%E5%8F%AF%E8%A7%86%E5%8C%96%E7%90%86%E8%A7%A3"><span class="toc-number">1.10.</span> <span class="toc-text">8. 可视化理解</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#8-1-%E9%A2%91%E7%8E%87%E7%9A%84%E5%88%86%E5%B8%83"><span class="toc-number">1.10.1.</span> <span class="toc-text">8.1 频率的分布</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#8-2-%E4%B8%8D%E5%90%8C%E4%BD%8D%E7%BD%AE%E7%9A%84%E6%97%8B%E8%BD%AC"><span class="toc-number">1.10.2.</span> <span class="toc-text">8.2 不同位置的旋转</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%F0%9F%8E%A4-%E9%9D%A2%E8%AF%95%E8%80%83%E7%82%B9"><span class="toc-number">1.11.</span> <span class="toc-text">🎤 面试考点</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Q1%EF%BC%9ARoPE-%E7%9A%84%E6%A0%B8%E5%BF%83%E5%8E%9F%E7%90%86%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F%EF%BC%88%E5%BF%85%E8%80%83%EF%BC%89"><span class="toc-number">1.11.1.</span> <span class="toc-text">Q1：RoPE 的核心原理是什么？（必考）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Q2%EF%BC%9Arope-theta-%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F%E5%AE%83%E7%9A%84%E4%BD%9C%E7%94%A8%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="toc-number">1.11.2.</span> <span class="toc-text">Q2：rope_theta 是什么？它的作用是什么？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Q3%EF%BC%9ARoPE-%E5%92%8C%E7%BB%9D%E5%AF%B9%E4%BD%8D%E7%BD%AE%E7%BC%96%E7%A0%81%E6%9C%89%E4%BB%80%E4%B9%88%E5%8C%BA%E5%88%AB%EF%BC%9F"><span class="toc-number">1.11.3.</span> <span class="toc-text">Q3：RoPE 和绝对位置编码有什么区别？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Q4%EF%BC%9A%E4%B8%BA%E4%BB%80%E4%B9%88-RoPE-%E5%8F%AA%E5%BA%94%E7%94%A8%E4%BA%8E-Q-%E5%92%8C-K%EF%BC%8C%E4%B8%8D%E5%BA%94%E7%94%A8%E4%BA%8E-V%EF%BC%9F"><span class="toc-number">1.11.4.</span> <span class="toc-text">Q4：为什么 RoPE 只应用于 Q 和 K，不应用于 V？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Q5%EF%BC%9A%E4%BB%80%E4%B9%88%E6%98%AF%E9%95%BF%E5%BA%A6%E5%A4%96%E6%8E%A8%E9%97%AE%E9%A2%98%EF%BC%9F%E5%A6%82%E4%BD%95%E8%A7%A3%E5%86%B3%EF%BC%9F"><span class="toc-number">1.11.5.</span> <span class="toc-text">Q5：什么是长度外推问题？如何解决？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Q6%EF%BC%9A%E8%AF%B7%E8%A7%A3%E9%87%8A-precompute-freqs-cis-%E5%87%BD%E6%95%B0%E7%9A%84%E4%BD%9C%E7%94%A8"><span class="toc-number">1.11.6.</span> <span class="toc-text">Q6：请解释 precompute_freqs_cis 函数的作用</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E2%9C%85-%E8%87%AA%E6%B5%8B%E9%A2%98"><span class="toc-number">1.12.</span> <span class="toc-text">✅ 自测题</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%F0%9F%8E%A8-%E5%93%86%E5%95%A6A%E6%A2%A6%E5%9B%BE%E8%A7%A3"><span class="toc-number">1.13.</span> <span class="toc-text">🎨 哆啦A梦图解</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%F0%9F%94%AC-%E6%BA%90%E7%A0%81%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90"><span class="toc-number">1.14.</span> <span class="toc-text">🔬 源码深度解析</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#MiniMind-%E5%AF%B9%E5%BA%94%E6%96%87%E4%BB%B6"><span class="toc-number">1.14.1.</span> <span class="toc-text">MiniMind 对应文件</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A0%B8%E5%BF%83%E4%BB%A3%E7%A0%81%E9%80%90%E8%A1%8C%E8%A7%A3%E8%AF%BB"><span class="toc-number">1.14.2.</span> <span class="toc-text">核心代码逐行解读</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%AE%BE%E8%AE%A1%E5%86%B3%E7%AD%96%E8%A7%A3%E6%9E%90"><span class="toc-number">1.14.3.</span> <span class="toc-text">设计决策解析</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%F0%9F%A7%AA-%E5%8A%A8%E6%89%8B%E5%AE%9E%E9%AA%8C"><span class="toc-number">1.15.</span> <span class="toc-text">🧪 动手实验</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%9E%E9%AA%8C-1%EF%BC%9A%E5%8F%AF%E8%A7%86%E5%8C%96%E4%B8%8D%E5%90%8C%E7%BB%B4%E5%BA%A6%E7%BB%84%E7%9A%84%E6%97%8B%E8%BD%AC%E8%A7%92%E5%BA%A6"><span class="toc-number">1.15.1.</span> <span class="toc-text">实验 1：可视化不同维度组的旋转角度</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%9E%E9%AA%8C-2%EF%BC%9A%E5%AF%B9%E6%AF%94%E4%B8%8D%E5%90%8C-rope-theta-%E5%AF%B9%E4%BD%8D%E7%BD%AE%E5%8C%BA%E5%88%86%E5%BA%A6%E7%9A%84%E5%BD%B1%E5%93%8D"><span class="toc-number">1.15.2.</span> <span class="toc-text">实验 2：对比不同 rope_theta 对位置区分度的影响</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%F0%9F%93%9D-%E9%9D%A2%E8%AF%95%E8%80%83%E7%82%B9%E6%80%BB%E7%BB%93"><span class="toc-number">1.16.</span> <span class="toc-text">📝 面试考点总结</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%F0%9F%94%AE-%E4%B8%8B%E4%B8%80%E8%8A%82%E9%A2%84%E5%91%8A"><span class="toc-number">1.17.</span> <span class="toc-text">🔮 下一节预告</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/05/09/L01-%E4%BB%80%E4%B9%88%E6%98%AF%E5%A4%A7%E8%AF%AD%E8%A8%80%E6%A8%A1%E5%9E%8B/" title="L01-什么是大语言模型">L01-什么是大语言模型</a><time datetime="2026-05-08T16:00:00.000Z" title="发表于 2026-05-09 00:00:00">2026-05-09</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/05/09/L03-PyTorch%E5%BF%AB%E9%80%9F%E4%B8%8A%E6%89%8B/" title="L03-PyTorch快速上手">L03-PyTorch快速上手</a><time datetime="2026-05-08T16:00:00.000Z" title="发表于 2026-05-09 00:00:00">2026-05-09</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/05/09/L02-Transformer%E5%85%A8%E6%99%AF%E5%9B%BE/" title="L02-Transformer全景图">L02-Transformer全景图</a><time datetime="2026-05-08T16:00:00.000Z" title="发表于 2026-05-09 00:00:00">2026-05-09</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/05/09/L05-Tokenizer%E5%88%86%E8%AF%8D%E5%99%A8/" title="L05-Tokenizer分词器">L05-Tokenizer分词器</a><time datetime="2026-05-08T16:00:00.000Z" title="发表于 2026-05-09 00:00:00">2026-05-09</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/05/09/L04-MiniMind%E9%A1%B9%E7%9B%AE%E5%AF%BC%E8%A7%88/" title="L04-MiniMind项目导览">L04-MiniMind项目导览</a><time datetime="2026-05-08T16:00:00.000Z" title="发表于 2026-05-09 00:00:00">2026-05-09</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2026 By XiaoYing</span></div><div class="footer_custom_text">🌸 愿所有努力，皆有回响 🌸</div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.4"></script><script src="/js/main.js?v=5.5.4"></script><div class="js-pjax"></div><script defer src="/js/cursor.js"></script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索文章" type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.4"></script></div></div><script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script>
+        <style>
+            [bg-lazy] {
+                background-image: none !important;
+                background-color: #eee !important;
+            }
+        </style>
+        <script>
+            window.imageLazyLoadSetting = {
+                isSPA: false,
+                preloadRatio: 1,
+                processImages: null,
+            };
+        </script><script>window.addEventListener("load",function(){var t=/\.(gif|jpg|jpeg|tiff|png)$/i,r=/^data:image\/[a-z\d\-\.\+]+;base64,/;Array.prototype.slice.call(document.querySelectorAll("img[data-original]")).forEach(function(a){var e=a.parentNode;"A"===e.tagName&&(t.test(e.href)||r.test(e.href))&&(e.href=a.dataset.original)})});</script><script>(r=>{r.imageLazyLoadSetting.processImages=t;var a=r.imageLazyLoadSetting.isSPA,o=r.imageLazyLoadSetting.preloadRatio||1,d=i();function i(){var t=Array.prototype.slice.call(document.querySelectorAll("img[data-original]")),e=Array.prototype.slice.call(document.querySelectorAll("[bg-lazy]"));return t.concat(e)}function t(t){(a||t)&&(d=i());for(var e,n=0;n<d.length;n++)0<=(e=(e=d[n]).getBoundingClientRect()).bottom&&0<=e.left&&e.top<=(r.innerHeight*o||document.documentElement.clientHeight*o)&&(()=>{var t,e,a,o,i=d[n];e=function(){d=d.filter(function(t){return i!==t}),r.imageLazyLoadSetting.onImageLoaded&&r.imageLazyLoadSetting.onImageLoaded(i)},(t=i).dataset.loaded||(t.hasAttribute("bg-lazy")?(t.removeAttribute("bg-lazy"),e&&e()):(a=new Image,o=t.getAttribute("data-original"),a.onload=function(){t.src=o,t.removeAttribute("data-original"),t.setAttribute("data-loaded",!0),e&&e()},a.onerror=function(){t.removeAttribute("data-original"),t.setAttribute("data-loaded",!1),t.src=o},t.src!==o&&(a.src=o)))})()}function e(){clearTimeout(t.tId),t.tId=setTimeout(t,500)}t(),document.addEventListener("scroll",e),r.addEventListener("resize",e),r.addEventListener("orientationchange",e)})(this);</script></body></html>

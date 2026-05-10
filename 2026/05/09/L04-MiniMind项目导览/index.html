@@ -1,0 +1,908 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>L04-MiniMind项目导览 | XiaoYing-Blog🐈</title><meta name="author" content="XiaoYing"><meta name="copyright" content="XiaoYing"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="L04 - MiniMind 项目导览 “千里之行，始于配环境”   📌 本节目标 理解 MiniMind 项目的设计哲学和定位 掌握项目的目录结构和每个关键文件的作用 了解模型版本和核心配置参数 完成环境搭建并运行第一次推理 理解 MiniMind 的技术特色和面试价值   📚 前置知识 阅读完 L01-L03，理解大语言模型基本原理、Transformer 架构和 PyTorch 基础 能">
+<meta property="og:type" content="article">
+<meta property="og:title" content="L04-MiniMind项目导览">
+<meta property="og:url" content="http://example.com/2026/05/09/L04-MiniMind%E9%A1%B9%E7%9B%AE%E5%AF%BC%E8%A7%88/index.html">
+<meta property="og:site_name" content="XiaoYing-Blog🐈">
+<meta property="og:description" content="L04 - MiniMind 项目导览 “千里之行，始于配环境”   📌 本节目标 理解 MiniMind 项目的设计哲学和定位 掌握项目的目录结构和每个关键文件的作用 了解模型版本和核心配置参数 完成环境搭建并运行第一次推理 理解 MiniMind 的技术特色和面试价值   📚 前置知识 阅读完 L01-L03，理解大语言模型基本原理、Transformer 架构和 PyTorch 基础 能">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/img/icon.png">
+<meta property="article:published_time" content="2026-05-08T16:00:00.000Z">
+<meta property="article:modified_time" content="2026-05-10T05:36:57.579Z">
+<meta property="article:author" content="XiaoYing">
+<meta property="article:tag" content="MiniMind">
+<meta property="article:tag" content="项目实战">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/img/icon.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "L04-MiniMind项目导览",
+  "url": "http://example.com/2026/05/09/L04-MiniMind%E9%A1%B9%E7%9B%AE%E5%AF%BC%E8%A7%88/",
+  "image": "http://example.com/img/icon.png",
+  "datePublished": "2026-05-08T16:00:00.000Z",
+  "dateModified": "2026-05-10T05:36:57.579Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "XiaoYing",
+      "url": "http://example.com"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="http://example.com/2026/05/09/L04-MiniMind%E9%A1%B9%E7%9B%AE%E5%AF%BC%E8%A7%88/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.4"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":false,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'L04-MiniMind项目导览',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/custom.css"><meta name="generator" content="Hexo 8.1.2"></head><body><div class="bg-animation" id="web_bg" style="background-image: url(/img/avg.jpg);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/loading.gif" data-original="/img/icon.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">22</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">35</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">2</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><span class="site-page group hide"><i class="fa-fw fa fa-list"></i><span> 列表</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/music/"><i class="fa-fw fas fa-music"></i><span> 音乐</span></a></li><li><a class="site-page child" href="/picture/"><i class="fa-fw fas fa-images"></i><span> 照片</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 电影</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/comments/"><i class="fa-fw fas fa-envelope-open"></i><span> 留言板</span></a></div><div class="menus_item"><a class="site-page" href="/link"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-color: rgba(0, 0, 0, 0);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">XiaoYing-Blog🐈</span></a><a class="nav-page-title" href="/"><span class="site-name">L04-MiniMind项目导览</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><span class="site-page group hide"><i class="fa-fw fa fa-list"></i><span> 列表</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/music/"><i class="fa-fw fas fa-music"></i><span> 音乐</span></a></li><li><a class="site-page child" href="/picture/"><i class="fa-fw fas fa-images"></i><span> 照片</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 电影</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/comments/"><i class="fa-fw fas fa-envelope-open"></i><span> 留言板</span></a></div><div class="menus_item"><a class="site-page" href="/link"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">L04-MiniMind项目导览</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-05-08T16:00:00.000Z" title="发表于 2026-05-09 00:00:00">2026-05-09</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-05-10T05:36:57.579Z" title="更新于 2026-05-10 13:36:57">2026-05-10</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E5%A4%A7%E6%A8%A1%E5%9E%8B%E5%AD%A6%E4%B9%A0/">大模型学习</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">4.8k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>17分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h1 id="L04-MiniMind-项目导览"><a href="#L04-MiniMind-项目导览" class="headerlink" title="L04 - MiniMind 项目导览"></a>L04 - MiniMind 项目导览</h1><blockquote>
+<p><strong>“千里之行，始于配环境”</strong></p>
+</blockquote>
+<hr>
+<h2 id="📌-本节目标"><a href="#📌-本节目标" class="headerlink" title="📌 本节目标"></a>📌 本节目标</h2><ol>
+<li>理解 MiniMind 项目的设计哲学和定位</li>
+<li>掌握项目的目录结构和每个关键文件的作用</li>
+<li>了解模型版本和核心配置参数</li>
+<li>完成环境搭建并运行第一次推理</li>
+<li>理解 MiniMind 的技术特色和面试价值</li>
+</ol>
+<hr>
+<h2 id="📚-前置知识"><a href="#📚-前置知识" class="headerlink" title="📚 前置知识"></a>📚 前置知识</h2><ul>
+<li>阅读完 L01-L03，理解大语言模型基本原理、Transformer 架构和 PyTorch 基础</li>
+<li>能在终端中执行基本的 shell 命令（cd、ls、pip、python）</li>
+<li>有一台安装了 Python 3.9+ 的电脑（有 GPU 更好，没有也可以用 CPU 体验推理）</li>
+</ul>
+<hr>
+<h2 id="正文讲解"><a href="#正文讲解" class="headerlink" title="正文讲解"></a>正文讲解</h2><h3 id="1-MiniMind-项目的目标和设计哲学"><a href="#1-MiniMind-项目的目标和设计哲学" class="headerlink" title="1. MiniMind 项目的目标和设计哲学"></a>1. MiniMind 项目的目标和设计哲学</h3><h4 id="1-1-为什么需要-MiniMind？"><a href="#1-1-为什么需要-MiniMind？" class="headerlink" title="1.1 为什么需要 MiniMind？"></a>1.1 为什么需要 MiniMind？</h4><p>想象你想学修汽车引擎。你有两个选择：</p>
+<ul>
+<li><strong>选项 A</strong>：去法拉利工厂，面对一台 800 马力的 V12 发动机，上万个零件——看都看不懂</li>
+<li><strong>选项 B</strong>：去教学工坊，面对一台结构完整但大小只有 1&#x2F;2700 的教学引擎——每个零件都能拆开看</li>
+</ul>
+<p>MiniMind 就是那台<strong>教学引擎</strong>。</p>
+<table>
+<thead>
+<tr>
+<th>大模型（GPT-3&#x2F;4）</th>
+<th>MiniMind</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>参数 1750 亿+</td>
+<td>参数仅 6400 万</td>
+</tr>
+<tr>
+<td>需要上千张 A100 GPU</td>
+<td>一张消费级 GPU 即可</td>
+</tr>
+<tr>
+<td>训练花费上亿美元</td>
+<td>训练花费几块钱电费</td>
+</tr>
+<tr>
+<td>代码用各种优化框架封装</td>
+<td><strong>纯 PyTorch 原生实现</strong></td>
+</tr>
+<tr>
+<td>只能用，看不懂</td>
+<td><strong>每一行代码都能读懂</strong></td>
+</tr>
+</tbody></table>
+<h4 id="1-2-核心设计哲学"><a href="#1-2-核心设计哲学" class="headerlink" title="1.2 核心设计哲学"></a>1.2 核心设计哲学</h4><blockquote>
+<p><strong>“麻雀虽小，五脏俱全”</strong></p>
+</blockquote>
+<p>MiniMind 的设计目标不是”做一个好用的聊天机器人”，而是”用最小的代价，走完大模型训练的每一步”。因此它：</p>
+<ol>
+<li><strong>覆盖全链路</strong>：预训练 → SFT → DPO&#x2F;RLHF → 推理评估，一步不少</li>
+<li><strong>不依赖黑箱</strong>：不用 HuggingFace Trainer、DeepSpeed 等高层封装，核心训练代码全部手写</li>
+<li><strong>代码极简</strong>：模型定义只有几百行，一个下午就能通读</li>
+<li><strong>结构标准</strong>：架构和 LLaMA 一脉相承，学会了 MiniMind 就理解了主流大模型的设计</li>
+</ol>
+<h3 id="2-项目目录结构详解"><a href="#2-项目目录结构详解" class="headerlink" title="2. 项目目录结构详解"></a>2. 项目目录结构详解</h3><p>下面是 MiniMind 的目录结构，以及每个文件夹&#x2F;文件的作用：</p>
+<pre><code class="highlight plaintext">minimind/
+├── model/                        # 🧠 模型结构代码
+│   ├── model_minimind.py         # ⭐ 核心：模型定义（MiniMindConfig、Attention、FFN、Block、CausalLM）
+│   ├── model_lora.py             # LoRA 微调相关的模型定义
+│   ├── tokenizer.json            # 分词器的词表和规则
+│   └── tokenizer_config.json     # 分词器配置
+│
+├── trainer/                      # 🏋️ 训练脚本
+│   ├── train_pretrain.py         # ⭐ 预训练脚本（从零训练语言模型）
+│   ├── train_full_sft.py         # 全参数 SFT（有监督微调）
+│   ├── train_lora.py             # LoRA 微调
+│   ├── train_dpo.py              # DPO 偏好对齐训练
+│   ├── train_distillation.py     # 知识蒸馏
+│   ├── train_ppo.py              # PPO 强化学习训练
+│   ├── train_grpo.py             # GRPO 训练
+│   ├── train_agent.py            # Agent 训练（工具调用）
+│   ├── train_tokenizer.py        # 训练自定义分词器
+│   ├── trainer_utils.py          # 训练公共工具函数
+│   └── rollout_engine.py         # PPO/GRPO 的 rollout 引擎
+│
+├── dataset/                      # 📊 数据集相关
+│   ├── lm_dataset.py             # ⭐ 数据集定义（预训练、SFT 等数据加载逻辑）
+│   ├── dataset.md                # 数据集说明文档
+│   └── __init__.py
+│
+├── scripts/                      # 🛠️ 工具脚本
+│   ├── web_demo.py               # Streamlit Web 对话界面
+│   ├── chat_api.py               # 简单的 API 服务
+│   ├── serve_openai_api.py       # OpenAI 兼容 API 服务
+│   ├── convert_model.py          # 模型格式转换（支持 GGUF 等）
+│   └── eval_toolcall.py          # 工具调用评估
+│
+├── eval_llm.py                   # 🎯 推理评估脚本（命令行对话）
+├── requirements.txt              # 📦 Python 依赖列表
+├── README.md                     # 📖 项目说明（中文）
+├── README_en.md                  # 📖 项目说明（英文）
+├── LICENSE                       # 📄 MIT 开源许可
+└── images/                       # 🖼️ README 中使用的图片</code></pre>
+
+<h4 id="重点文件详解"><a href="#重点文件详解" class="headerlink" title="重点文件详解"></a>重点文件详解</h4><h5 id="model-model-minimind-py-—-项目之魂"><a href="#model-model-minimind-py-—-项目之魂" class="headerlink" title="model/model_minimind.py — 项目之魂"></a><code>model/model_minimind.py</code> — 项目之魂</h5><p>这是整个项目最重要的文件，所有模型结构都在这里。它包含：</p>
+<table>
+<thead>
+<tr>
+<th>类名</th>
+<th>作用</th>
+<th>对应概念</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>MiniMindConfig</code></td>
+<td>模型配置</td>
+<td>定义所有超参数（隐藏层大小、层数、头数等）</td>
+</tr>
+<tr>
+<td><code>RMSNorm</code></td>
+<td>归一化层</td>
+<td>L02 中讲的 Layer Normalization（简化版）</td>
+</tr>
+<tr>
+<td><code>Attention</code></td>
+<td>注意力机制</td>
+<td>L02 中讲的 Self-Attention + GQA + RoPE</td>
+</tr>
+<tr>
+<td><code>FeedForward</code></td>
+<td>前馈网络</td>
+<td>L02 中讲的 SwiGLU FFN</td>
+</tr>
+<tr>
+<td><code>MoEGate</code> &#x2F; <code>MOEFeedForward</code></td>
+<td>专家混合</td>
+<td>MoE 版本的 FFN（高级话题）</td>
+</tr>
+<tr>
+<td><code>MiniMindBlock</code></td>
+<td>Transformer 块</td>
+<td>一层完整的 Transformer（Pre-Norm + Attention + FFN + 残差）</td>
+</tr>
+<tr>
+<td><code>MiniMindModel</code></td>
+<td>模型主体</td>
+<td>Embedding + N × Block + 最终 RMSNorm</td>
+</tr>
+<tr>
+<td><code>MiniMindForCausalLM</code></td>
+<td>因果语言模型</td>
+<td>MiniMindModel + lm_head + 损失计算 + 生成</td>
+</tr>
+</tbody></table>
+<h5 id="trainer-train-pretrain-py-—-训练入口"><a href="#trainer-train-pretrain-py-—-训练入口" class="headerlink" title="trainer/train_pretrain.py — 训练入口"></a><code>trainer/train_pretrain.py</code> — 训练入口</h5><p>预训练脚本包含：</p>
+<ul>
+<li>命令行参数解析（batch_size、learning_rate、epochs 等）</li>
+<li>模型和优化器初始化</li>
+<li>数据加载器构建</li>
+<li>训练循环（混合精度、梯度累积、梯度裁剪）</li>
+<li>模型保存和日志记录</li>
+<li>DDP 多卡分布式训练支持</li>
+</ul>
+<h5 id="eval-llm-py-—-快速体验"><a href="#eval-llm-py-—-快速体验" class="headerlink" title="eval_llm.py — 快速体验"></a><code>eval_llm.py</code> — 快速体验</h5><p>推理脚本，加载训练好的模型权重，在命令行中与模型对话：</p>
+<pre><code class="highlight python"><span class="comment"># 核心流程</span>
+tokenizer = AutoTokenizer.from_pretrained(model_path)
+model = MiniMindForCausalLM.from_pretrained(model_path)
+<span class="comment"># 自回归生成</span>
+generated_ids = model.generate(
+    inputs=inputs[<span class="string">&quot;input_ids&quot;</span>],
+    max_new_tokens=args.max_new_tokens,
+    do_sample=<span class="literal">True</span>,
+    top_p=args.top_p,
+    temperature=args.temperature,
+)</code></pre>
+
+<h3 id="3-模型版本介绍"><a href="#3-模型版本介绍" class="headerlink" title="3. 模型版本介绍"></a>3. 模型版本介绍</h3><p>MiniMind 提供了多个模型版本，核心区别在于参数量和是否使用 MoE：</p>
+<table>
+<thead>
+<tr>
+<th>模型版本</th>
+<th>参数量</th>
+<th>架构特点</th>
+<th>适合场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>minimind-3</strong></td>
+<td>~64M</td>
+<td>标准 Dense 架构</td>
+<td>⭐ 学习入门首选</td>
+</tr>
+<tr>
+<td><strong>minimind-3-MoE</strong></td>
+<td>~198M</td>
+<td>Mixture of Experts</td>
+<td>学习 MoE 架构</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>MoE 是什么？</strong> Mixture of Experts（专家混合）是一种”条件计算”技术——模型有多个 FFN “专家”，但每次只激活其中一部分。这样参数总量大（198M），但实际每次计算量和 64M 差不多。MoE 是 GPT-4 等前沿大模型采用的技术。</p>
+</blockquote>
+<p>对于初学者，<strong>强烈建议从 minimind-3（64M）开始</strong>。它结构最简单，最容易理解。</p>
+<h3 id="4-核心配置参数表"><a href="#4-核心配置参数表" class="headerlink" title="4. 核心配置参数表"></a>4. 核心配置参数表</h3><p>以下是 minimind-3 的默认配置（<code>MiniMindConfig</code> 类）：</p>
+<table>
+<thead>
+<tr>
+<th>参数名</th>
+<th>值</th>
+<th>含义</th>
+<th>类比</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>hidden_size</code></td>
+<td>768</td>
+<td>隐藏层维度（d_model）</td>
+<td>每个词的”内部表示”有多丰富</td>
+</tr>
+<tr>
+<td><code>num_hidden_layers</code></td>
+<td>8</td>
+<td>Transformer 层数</td>
+<td>模型有多”深”，信息被处理多少遍</td>
+</tr>
+<tr>
+<td><code>num_attention_heads</code></td>
+<td>8</td>
+<td>Query 注意力头数</td>
+<td>从多少个角度理解句子</td>
+</tr>
+<tr>
+<td><code>num_key_value_heads</code></td>
+<td>4</td>
+<td>Key&#x2F;Value 注意力头数（GQA）</td>
+<td>KV Cache 的共享程度</td>
+</tr>
+<tr>
+<td><code>head_dim</code></td>
+<td>96</td>
+<td>每个头的维度 (768&#x2F;8)</td>
+<td>每个”角度”看到多少信息</td>
+</tr>
+<tr>
+<td><code>vocab_size</code></td>
+<td>6400</td>
+<td>词表大小</td>
+<td>模型认识多少个不同的 token</td>
+</tr>
+<tr>
+<td><code>intermediate_size</code></td>
+<td>~2048</td>
+<td>FFN 中间层维度</td>
+<td>FFN 的”思考空间”大小</td>
+</tr>
+<tr>
+<td><code>max_position_embeddings</code></td>
+<td>32768</td>
+<td>最大序列长度</td>
+<td>一次最多处理多少 token</td>
+</tr>
+<tr>
+<td><code>dropout</code></td>
+<td>0.0</td>
+<td>Dropout 概率</td>
+<td>训练时随机关闭神经元的比例</td>
+</tr>
+<tr>
+<td><code>use_moe</code></td>
+<td>False</td>
+<td>是否使用 MoE</td>
+<td>minimind-3 为 False</td>
+</tr>
+</tbody></table>
+<h4 id="参数量怎么算？"><a href="#参数量怎么算？" class="headerlink" title="参数量怎么算？"></a>参数量怎么算？</h4><p>大语言模型的参数主要分布在这几个部分：</p>
+<pre><code class="highlight plaintext">1. Embedding 层
+   vocab_size × hidden_size = 6400 × 768 = 4,915,200 (≈5M)
+
+2. 每个 Transformer Block（共 8 个）:
+   - Q 投影: hidden_size × (num_attention_heads × head_dim) = 768 × 768 = 589,824
+   - K 投影: hidden_size × (num_key_value_heads × head_dim) = 768 × 384 = 294,912
+   - V 投影: 768 × 384 = 294,912
+   - O 投影: 768 × 768 = 589,824
+   - FFN gate: 768 × 2048 = 1,572,864
+   - FFN up:   768 × 2048 = 1,572,864
+   - FFN down: 2048 × 768 = 1,572,864
+   - RMSNorm × 2: 768 × 2 = 1,536
+   
+   每层总计 ≈ 6.5M
+   8 层总计 ≈ 52M
+
+3. 最终 RMSNorm: 768
+4. lm_head: 与 Embedding 共享权重，不额外算
+
+总计 ≈ 5M + 52M + ... ≈ 64M</code></pre>
+
+<blockquote>
+<p><strong>面试技巧</strong>：能手算模型参数量是一个加分项，说明你真正理解了模型结构。</p>
+</blockquote>
+<h3 id="5-环境搭建步骤"><a href="#5-环境搭建步骤" class="headerlink" title="5. 环境搭建步骤"></a>5. 环境搭建步骤</h3><h4 id="第-1-步：克隆项目"><a href="#第-1-步：克隆项目" class="headerlink" title="第 1 步：克隆项目"></a>第 1 步：克隆项目</h4><pre><code class="highlight bash">git <span class="built_in">clone</span> https://github.com/jingyaogong/minimind.git
+<span class="built_in">cd</span> minimind</code></pre>
+
+<h4 id="第-2-步：创建虚拟环境（推荐）"><a href="#第-2-步：创建虚拟环境（推荐）" class="headerlink" title="第 2 步：创建虚拟环境（推荐）"></a>第 2 步：创建虚拟环境（推荐）</h4><pre><code class="highlight bash"><span class="comment"># 使用 conda</span>
+conda create -n minimind python=3.10
+conda activate minimind
+
+<span class="comment"># 或者使用 venv</span>
+python -m venv venv
+<span class="built_in">source</span> venv/bin/activate</code></pre>
+
+<h4 id="第-3-步：安装-PyTorch"><a href="#第-3-步：安装-PyTorch" class="headerlink" title="第 3 步：安装 PyTorch"></a>第 3 步：安装 PyTorch</h4><p>PyTorch 需要根据你的 GPU 和 CUDA 版本单独安装。访问 <a target="_blank" rel="noopener" href="https://pytorch.org/get-started/locally/">PyTorch 官网</a> 获取对应命令。</p>
+<pre><code class="highlight bash"><span class="comment"># 有 NVIDIA GPU (CUDA 12.x)</span>
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+
+<span class="comment"># 只有 CPU</span>
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+
+<span class="comment"># macOS Apple Silicon</span>
+pip install torch torchvision torchaudio</code></pre>
+
+<h4 id="第-4-步：安装项目依赖"><a href="#第-4-步：安装项目依赖" class="headerlink" title="第 4 步：安装项目依赖"></a>第 4 步：安装项目依赖</h4><pre><code class="highlight bash">pip install -r requirements.txt</code></pre>
+
+<p><code>requirements.txt</code> 主要包含：</p>
+<table>
+<thead>
+<tr>
+<th>包名</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>transformers</code></td>
+<td>HuggingFace 模型加载&#x2F;保存框架</td>
+</tr>
+<tr>
+<td><code>datasets</code></td>
+<td>数据集加载工具</td>
+</tr>
+<tr>
+<td><code>trl</code></td>
+<td>用于 DPO&#x2F;PPO 等训练</td>
+</tr>
+<tr>
+<td><code>swanlab</code></td>
+<td>训练日志可视化</td>
+</tr>
+<tr>
+<td><code>streamlit</code></td>
+<td>Web Demo 界面</td>
+</tr>
+</tbody></table>
+<h4 id="第-5-步：检查-GPU"><a href="#第-5-步：检查-GPU" class="headerlink" title="第 5 步：检查 GPU"></a>第 5 步：检查 GPU</h4><pre><code class="highlight python"><span class="keyword">import</span> torch
+<span class="built_in">print</span>(<span class="string">f&quot;PyTorch 版本: <span class="subst">&#123;torch.__version__&#125;</span>&quot;</span>)
+<span class="built_in">print</span>(<span class="string">f&quot;CUDA 可用: <span class="subst">&#123;torch.cuda.is_available()&#125;</span>&quot;</span>)
+<span class="keyword">if</span> torch.cuda.is_available():
+    <span class="built_in">print</span>(<span class="string">f&quot;GPU 型号: <span class="subst">&#123;torch.cuda.get_device_name(<span class="number">0</span>)&#125;</span>&quot;</span>)
+    <span class="built_in">print</span>(<span class="string">f&quot;显存大小: <span class="subst">&#123;torch.cuda.get_device_properties(<span class="number">0</span>).total_mem / <span class="number">1024</span>**<span class="number">3</span>:<span class="number">.1</span>f&#125;</span> GB&quot;</span>)</code></pre>
+
+<p>即使没有 GPU，你也可以用 CPU 运行推理（只是慢一些），以及阅读和理解所有代码。</p>
+<h3 id="6-快速体验：下载预训练模型并运行推理"><a href="#6-快速体验：下载预训练模型并运行推理" class="headerlink" title="6. 快速体验：下载预训练模型并运行推理"></a>6. 快速体验：下载预训练模型并运行推理</h3><p>MiniMind 提供了预训练好的模型权重，可以直接下载体验。</p>
+<h4 id="方法-1：通过-HuggingFace-下载（推荐）"><a href="#方法-1：通过-HuggingFace-下载（推荐）" class="headerlink" title="方法 1：通过 HuggingFace 下载（推荐）"></a>方法 1：通过 HuggingFace 下载（推荐）</h4><pre><code class="highlight bash"><span class="comment"># 安装 huggingface_hub（如果还没装的话）</span>
+pip install huggingface_hub
+
+<span class="comment"># 下载模型（会自动缓存到本地）</span>
+python eval_llm.py</code></pre>
+
+<p><code>eval_llm.py</code> 默认会从 HuggingFace Hub 加载预训练模型权重。</p>
+<h4 id="方法-2：手动下载"><a href="#方法-2：手动下载" class="headerlink" title="方法 2：手动下载"></a>方法 2：手动下载</h4><p>从项目 README 中的链接下载模型文件，放到指定目录。</p>
+<h4 id="运行推理"><a href="#运行推理" class="headerlink" title="运行推理"></a>运行推理</h4><pre><code class="highlight bash">python eval_llm.py</code></pre>
+
+<p>运行后你会看到一个交互式对话界面：</p>
+<pre><code class="highlight plaintext">用户: 你好，请介绍一下你自己
+MiniMind: 我是 MiniMind，一个小型的语言模型...
+
+用户: 什么是人工智能？
+MiniMind: 人工智能是...</code></pre>
+
+<p>虽然 MiniMind 的回答质量远不如 GPT-4（毕竟只有 64M 参数），但你可以清楚地看到一个完整的语言模型是如何工作的。</p>
+<h4 id="运行-Web-Demo"><a href="#运行-Web-Demo" class="headerlink" title="运行 Web Demo"></a>运行 Web Demo</h4><pre><code class="highlight bash">streamlit run scripts/web_demo.py</code></pre>
+
+<p>这会启动一个浏览器界面，提供更友好的对话体验。</p>
+<h3 id="7-训练数据的获取方式"><a href="#7-训练数据的获取方式" class="headerlink" title="7. 训练数据的获取方式"></a>7. 训练数据的获取方式</h3><p>MiniMind 使用的训练数据以 JSONL 格式存储。</p>
+<h4 id="预训练数据"><a href="#预训练数据" class="headerlink" title="预训练数据"></a>预训练数据</h4><p>预训练数据是纯文本（无标注），格式如下：</p>
+<pre><code class="highlight jsonl">&#123;&quot;text&quot;: &quot;北京是中华人民共和国的首都，位于华北平原的北部...&quot;&#125;
+&#123;&quot;text&quot;: &quot;深度学习是机器学习的一个分支，它使用多层神经网络...&quot;&#125;</code></pre>
+
+<p>数据文件默认路径为 <code>dataset/pretrain_t2t_mini.jsonl</code>（相对于 trainer 目录）。</p>
+<h4 id="SFT-数据"><a href="#SFT-数据" class="headerlink" title="SFT 数据"></a>SFT 数据</h4><p>SFT（有监督微调）数据是对话格式：</p>
+<pre><code class="highlight jsonl">&#123;&quot;conversations&quot;: [&#123;&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;你好&quot;&#125;, &#123;&quot;role&quot;: &quot;assistant&quot;, &quot;content&quot;: &quot;你好！有什么可以帮助你的吗？&quot;&#125;]&#125;</code></pre>
+
+<p>数据加载逻辑在 <code>dataset/lm_dataset.py</code> 中实现。</p>
+<h3 id="8-MiniMind-的技术特色"><a href="#8-MiniMind-的技术特色" class="headerlink" title="8. MiniMind 的技术特色"></a>8. MiniMind 的技术特色</h3><h4 id="8-1-纯-PyTorch-原生实现"><a href="#8-1-纯-PyTorch-原生实现" class="headerlink" title="8.1 纯 PyTorch 原生实现"></a>8.1 纯 PyTorch 原生实现</h4><p>这是 MiniMind <strong>最大的学习价值</strong>。</p>
+<p>很多开源项目虽然也提供了模型代码，但训练部分高度依赖 HuggingFace Trainer、DeepSpeed、Megatron 等高层框架。你看到的代码可能只有几行配置，真正的训练逻辑藏在框架内部。</p>
+<p>MiniMind 不同——它的训练循环是<strong>手写的</strong>：</p>
+<pre><code class="highlight python"><span class="comment"># MiniMind 的训练循环（trainer/train_pretrain.py）</span>
+<span class="keyword">for</span> step, (input_ids, labels) <span class="keyword">in</span> <span class="built_in">enumerate</span>(loader):
+    input_ids = input_ids.to(args.device)
+    labels = labels.to(args.device)
+
+    <span class="keyword">with</span> autocast_ctx:
+        res = model(input_ids, labels=labels)
+        loss = res.loss + res.aux_loss
+        loss = loss / args.accumulation_steps
+
+    scaler.scale(loss).backward()
+
+    <span class="keyword">if</span> step % args.accumulation_steps == <span class="number">0</span>:
+        scaler.unscale_(optimizer)
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=<span class="number">1.0</span>)
+        scaler.step(optimizer)
+        scaler.update()
+        optimizer.zero_grad()</code></pre>
+
+<p>每一行你都能看懂——这就是 MiniMind 的价值。</p>
+<h4 id="8-2-与-LLaMA-架构一脉相承"><a href="#8-2-与-LLaMA-架构一脉相承" class="headerlink" title="8.2 与 LLaMA 架构一脉相承"></a>8.2 与 LLaMA 架构一脉相承</h4><p>MiniMind 的架构选择和 Meta 的 LLaMA 系列高度一致：</p>
+<table>
+<thead>
+<tr>
+<th>技术</th>
+<th>LLaMA</th>
+<th>MiniMind</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Pre-RMSNorm</td>
+<td>✅</td>
+<td>✅</td>
+<td>先归一化再计算</td>
+</tr>
+<tr>
+<td>SwiGLU FFN</td>
+<td>✅</td>
+<td>✅</td>
+<td>门控激活函数</td>
+</tr>
+<tr>
+<td>RoPE 位置编码</td>
+<td>✅</td>
+<td>✅</td>
+<td>旋转位置编码</td>
+</tr>
+<tr>
+<td>GQA</td>
+<td>✅</td>
+<td>✅</td>
+<td>分组查询注意力</td>
+</tr>
+<tr>
+<td>Weight Tying</td>
+<td>✅</td>
+<td>✅</td>
+<td>Embedding 和 lm_head 共享权重</td>
+</tr>
+</tbody></table>
+<p>学会了 MiniMind，你就理解了 LLaMA 的核心架构。</p>
+<h4 id="8-3-覆盖全训练链路"><a href="#8-3-覆盖全训练链路" class="headerlink" title="8.3 覆盖全训练链路"></a>8.3 覆盖全训练链路</h4><table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>脚本</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>分词器训练</td>
+<td><code>train_tokenizer.py</code></td>
+<td>从零构建 BPE 分词器</td>
+</tr>
+<tr>
+<td>预训练 (PT)</td>
+<td><code>train_pretrain.py</code></td>
+<td>从零训练语言模型，学习语言知识</td>
+</tr>
+<tr>
+<td>全参 SFT</td>
+<td><code>train_full_sft.py</code></td>
+<td>用对话数据微调，学习对话格式</td>
+</tr>
+<tr>
+<td>LoRA 微调</td>
+<td><code>train_lora.py</code></td>
+<td>低秩适应，小参数量微调</td>
+</tr>
+<tr>
+<td>DPO 对齐</td>
+<td><code>train_dpo.py</code></td>
+<td>直接偏好优化，对齐人类偏好</td>
+</tr>
+<tr>
+<td>PPO&#x2F;GRPO</td>
+<td><code>train_ppo.py</code> &#x2F; <code>train_grpo.py</code></td>
+<td>强化学习方法对齐</td>
+</tr>
+<tr>
+<td>知识蒸馏</td>
+<td><code>train_distillation.py</code></td>
+<td>从大模型学习知识</td>
+</tr>
+<tr>
+<td>Agent 训练</td>
+<td><code>train_agent.py</code></td>
+<td>工具调用能力训练</td>
+</tr>
+</tbody></table>
+<p>这就是一个完整的大模型训练流水线。在后续课程中，我们会逐一深入每个阶段。</p>
+<h3 id="9-兼容主流框架"><a href="#9-兼容主流框架" class="headerlink" title="9. 兼容主流框架"></a>9. 兼容主流框架</h3><p>MiniMind 虽然代码简洁，但它兼容主流的模型推理和部署框架：</p>
+<table>
+<thead>
+<tr>
+<th>框架</th>
+<th>用途</th>
+<th>如何使用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>transformers</strong></td>
+<td>模型加载、推理</td>
+<td>直接用 <code>AutoModel.from_pretrained()</code></td>
+</tr>
+<tr>
+<td><strong>vLLM</strong></td>
+<td>高性能推理服务</td>
+<td>转换格式后加载</td>
+</tr>
+<tr>
+<td><strong>Ollama</strong></td>
+<td>本地模型运行</td>
+<td>通过 GGUF 格式导入</td>
+</tr>
+<tr>
+<td><strong>OpenAI API</strong></td>
+<td>API 服务</td>
+<td>运行 <code>serve_openai_api.py</code></td>
+</tr>
+</tbody></table>
+<p>这意味着你可以把 MiniMind 当作学习项目理解完架构后，轻松迁移到生产级框架。</p>
+<h3 id="10-面试中如何介绍-MiniMind"><a href="#10-面试中如何介绍-MiniMind" class="headerlink" title="10. 面试中如何介绍 MiniMind"></a>10. 面试中如何介绍 MiniMind</h3><p>当面试官问”你有没有做过大模型相关的项目”时，你可以这样回答：</p>
+<blockquote>
+<p>“我深入学习了 MiniMind 这个开源项目——这是一个仅 64M 参数的大语言模型，采用和 LLaMA 相同的 Decoder-Only 架构（Pre-RMSNorm、SwiGLU、RoPE、GQA）。我不仅阅读了全部源码，还亲手完成了从预训练到 SFT 到 DPO 的完整训练流程。</p>
+<p>选择 MiniMind 的原因是：它完全用 PyTorch 原生实现，没有依赖 HuggingFace Trainer 等高层封装，所以我能真正理解训练的每一步——数据加载、前向传播、损失计算、混合精度、梯度累积、分布式训练。</p>
+<p>通过这个项目，我掌握了 [具体你学到的技术点]…”</p>
+</blockquote>
+<p><strong>关键要点</strong>：</p>
+<ol>
+<li>强调”深入理解”而非”简单使用”</li>
+<li>具体说出技术细节（GQA、RoPE、SwiGLU 等）</li>
+<li>说明为什么选这个项目（小而完整、纯原生、学习友好）</li>
+<li>结合你实际做的实验和踩过的坑</li>
+</ol>
+<hr>
+<h2 id="📂-对应-MiniMind-源码"><a href="#📂-对应-MiniMind-源码" class="headerlink" title="📂 对应 MiniMind 源码"></a>📂 对应 MiniMind 源码</h2><table>
+<thead>
+<tr>
+<th>概念</th>
+<th>对应文件</th>
+<th>关键代码</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>项目配置</td>
+<td><code>model/model_minimind.py</code></td>
+<td><code>class MiniMindConfig</code> — 所有超参数定义</td>
+</tr>
+<tr>
+<td>模型架构总览</td>
+<td><code>model/model_minimind.py</code></td>
+<td><code>class MiniMindForCausalLM</code> — 完整模型入口</td>
+</tr>
+<tr>
+<td>预训练脚本</td>
+<td><code>trainer/train_pretrain.py</code></td>
+<td>完整的预训练流程（数据加载、训练循环、保存）</td>
+</tr>
+<tr>
+<td>SFT 微调</td>
+<td><code>trainer/train_full_sft.py</code></td>
+<td>有监督微调的训练流程</td>
+</tr>
+<tr>
+<td>数据加载</td>
+<td><code>dataset/lm_dataset.py</code></td>
+<td><code>PretrainDataset</code>, <code>SFTDataset</code> 等数据集类</td>
+</tr>
+<tr>
+<td>推理评估</td>
+<td><code>eval_llm.py</code></td>
+<td>加载模型 + 自回归生成 + 交互式对话</td>
+</tr>
+<tr>
+<td>Web 界面</td>
+<td><code>scripts/web_demo.py</code></td>
+<td>Streamlit 对话界面</td>
+</tr>
+<tr>
+<td>API 服务</td>
+<td><code>scripts/serve_openai_api.py</code></td>
+<td>OpenAI 兼容的 API 接口</td>
+</tr>
+<tr>
+<td>模型转换</td>
+<td><code>scripts/convert_model.py</code></td>
+<td>将模型转换为 GGUF 等格式</td>
+</tr>
+<tr>
+<td>依赖管理</td>
+<td><code>requirements.txt</code></td>
+<td>所有 Python 依赖包</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="🎤-面试考点"><a href="#🎤-面试考点" class="headerlink" title="🎤 面试考点"></a>🎤 面试考点</h2><h3 id="Q1-为什么选择-MiniMind-来学习大模型？它有什么优势？"><a href="#Q1-为什么选择-MiniMind-来学习大模型？它有什么优势？" class="headerlink" title="Q1: 为什么选择 MiniMind 来学习大模型？它有什么优势？"></a>Q1: 为什么选择 MiniMind 来学习大模型？它有什么优势？</h3><p><strong>答</strong>：选择 MiniMind 有三个核心原因：</p>
+<ol>
+<li><strong>参数量小（64M）</strong>：一张消费级 GPU 就能完成全部训练流程，适合个人学习和实验。对比 GPT-3 的 175B，MiniMind 只有其 1&#x2F;2700，但结构完整不缺任何核心组件。</li>
+<li><strong>纯 PyTorch 原生实现</strong>：不依赖 HuggingFace Trainer、DeepSpeed 等高层框架，训练循环完全手写。阅读代码能真正理解训练过程中的每一步（混合精度、梯度累积、分布式训练等），而不是只会调参数配置。</li>
+<li><strong>全链路覆盖</strong>：从分词器训练到预训练、SFT、LoRA、DPO、PPO、知识蒸馏、Agent 训练——大模型训练的每个阶段都有对应代码。同时架构与 LLaMA 高度一致，学会了可以迁移到主流大模型。</li>
+</ol>
+<h3 id="Q2-MiniMind-的模型参数量是怎么计算出来的？"><a href="#Q2-MiniMind-的模型参数量是怎么计算出来的？" class="headerlink" title="Q2: MiniMind 的模型参数量是怎么计算出来的？"></a>Q2: MiniMind 的模型参数量是怎么计算出来的？</h3><p><strong>答</strong>：以 minimind-3（hidden_size&#x3D;768, num_hidden_layers&#x3D;8, vocab_size&#x3D;6400）为例：</p>
+<ol>
+<li><strong>Embedding 层</strong>：vocab_size × hidden_size &#x3D; 6400 × 768 ≈ 5M（与 lm_head 共享，只算一次）</li>
+<li><strong>每个 Transformer Block</strong>：<ul>
+<li>Q 投影：768 × 768 ≈ 0.6M</li>
+<li>K 投影：768 × 384（因为 GQA，kv_heads&#x3D;4）≈ 0.3M</li>
+<li>V 投影：768 × 384 ≈ 0.3M</li>
+<li>O 投影：768 × 768 ≈ 0.6M</li>
+<li>FFN（gate + up + down）：768 × 2048 × 3 ≈ 4.7M</li>
+<li>RMSNorm：768 × 2 ≈ 0.002M</li>
+<li>小计：≈ 6.5M&#x2F;层</li>
+</ul>
+</li>
+<li><strong>8 层 Block</strong>：6.5M × 8 ≈ 52M</li>
+<li><strong>其他</strong>（最终 RMSNorm 等）：约 0.001M</li>
+<li><strong>总计</strong>：5M + 52M + … ≈ <strong>64M</strong></li>
+</ol>
+<p>关键点：(1) GQA 让 K&#x2F;V 投影的参数量减半；(2) 所有 Linear 层没有 bias，节省了参数；(3) lm_head 和 embedding 共享权重。</p>
+<h3 id="Q3-MiniMind-和-LLaMA-在架构上有哪些相同点和不同点？"><a href="#Q3-MiniMind-和-LLaMA-在架构上有哪些相同点和不同点？" class="headerlink" title="Q3: MiniMind 和 LLaMA 在架构上有哪些相同点和不同点？"></a>Q3: MiniMind 和 LLaMA 在架构上有哪些相同点和不同点？</h3><p><strong>答</strong>：</p>
+<p><strong>相同点</strong>：</p>
+<ul>
+<li>都是 Decoder-Only 架构</li>
+<li>都使用 Pre-RMSNorm（先归一化再做计算）</li>
+<li>都使用 SwiGLU 作为 FFN 的激活函数</li>
+<li>都使用 RoPE（旋转位置编码）</li>
+<li>都使用 GQA（分组查询注意力）</li>
+<li>都使用 Weight Tying（Embedding 和 lm_head 共享权重）</li>
+</ul>
+<p><strong>不同点</strong>：</p>
+<ul>
+<li>规模差异巨大：MiniMind 64M vs LLaMA-7B&#x2F;13B&#x2F;70B</li>
+<li>MiniMind 的 vocab_size 只有 6400（LLaMA 为 32000+）</li>
+<li>MiniMind 提供了 MoE 版本，LLaMA 2 没有（LLaMA 3 系列有 MoE 变体）</li>
+<li>MiniMind 训练代码完全自包含，不依赖分布式训练框架</li>
+</ul>
+<h3 id="Q4-大模型训练的完整流程是什么？MiniMind-覆盖了哪些？"><a href="#Q4-大模型训练的完整流程是什么？MiniMind-覆盖了哪些？" class="headerlink" title="Q4: 大模型训练的完整流程是什么？MiniMind 覆盖了哪些？"></a>Q4: 大模型训练的完整流程是什么？MiniMind 覆盖了哪些？</h3><p><strong>答</strong>：大模型训练的完整流程：</p>
+<ol>
+<li><strong>数据收集与清洗</strong> → MiniMind 提供了预处理好的数据集</li>
+<li><strong>分词器训练</strong> → <code>train_tokenizer.py</code>（BPE 分词器）</li>
+<li><strong>预训练（PT）</strong> → <code>train_pretrain.py</code>（学习语言知识，Next Token Prediction）</li>
+<li><strong>有监督微调（SFT）</strong> → <code>train_full_sft.py</code> &#x2F; <code>train_lora.py</code>（学习对话格式）</li>
+<li><strong>对齐训练（RLHF&#x2F;DPO）</strong> → <code>train_dpo.py</code> &#x2F; <code>train_ppo.py</code>（对齐人类偏好）</li>
+<li><strong>评估与部署</strong> → <code>eval_llm.py</code> &#x2F; <code>scripts/</code> 下的各种脚本</li>
+</ol>
+<p>MiniMind 覆盖了上述全部阶段，是目前少有的”全链路”开源教学项目。</p>
+<h3 id="Q5-如何快速估算一个模型需要多少-GPU-显存？"><a href="#Q5-如何快速估算一个模型需要多少-GPU-显存？" class="headerlink" title="Q5: 如何快速估算一个模型需要多少 GPU 显存？"></a>Q5: 如何快速估算一个模型需要多少 GPU 显存？</h3><p><strong>答</strong>：粗略估算公式（用于训练）：</p>
+<ul>
+<li><strong>模型参数</strong>：每个 FP32 参数占 4 字节</li>
+<li><strong>梯度</strong>：与参数等大，占 4 字节</li>
+<li><strong>优化器状态</strong>：Adam&#x2F;AdamW 为每个参数维护 2 个状态（一阶动量 + 二阶动量），各占 4 字节</li>
+<li><strong>激活值</strong>：取决于 batch size 和序列长度</li>
+</ul>
+<p>FP32 训练总显存 ≈ 参数量 × (4 + 4 + 8) &#x3D; <strong>参数量 × 16 字节</strong></p>
+<p>MiniMind (64M)：64M × 16B ≈ 1GB（加上激活值等约 2-4GB，消费级 GPU 轻松搞定）<br>LLaMA-7B：7B × 16B ≈ 112GB（需要 2-4 张 A100 80GB）</p>
+<p>使用混合精度（BF16&#x2F;FP16）可以减半参数和梯度的显存，使用 LoRA 可以大幅减少需要更新的参数量。</p>
+<hr>
+<h2 id="✅-自测题"><a href="#✅-自测题" class="headerlink" title="✅ 自测题"></a>✅ 自测题</h2><h3 id="题目-1（选择题）"><a href="#题目-1（选择题）" class="headerlink" title="题目 1（选择题）"></a>题目 1（选择题）</h3><p>MiniMind 的核心模型定义代码在哪个文件中？</p>
+<p>A. <code>trainer/train_pretrain.py</code><br>B. <code>model/model_minimind.py</code><br>C. <code>eval_llm.py</code><br>D. <code>dataset/lm_dataset.py</code>  </p>
+<details>
+<summary>查看答案</summary>
+
+<p><strong>B</strong>。<code>model/model_minimind.py</code> 包含了所有模型结构定义：MiniMindConfig（配置类）、Attention、FeedForward、MiniMindBlock、MiniMindModel、MiniMindForCausalLM 等。</p>
+</details>
+
+<h3 id="题目-2（选择题）"><a href="#题目-2（选择题）" class="headerlink" title="题目 2（选择题）"></a>题目 2（选择题）</h3><p>以下关于 MiniMind 的说法，<strong>不正确</strong>的是？</p>
+<p>A. MiniMind 使用纯 PyTorch 原生实现，不依赖 HuggingFace Trainer<br>B. MiniMind 的架构与 LLaMA 高度一致<br>C. MiniMind 只支持预训练，不支持 SFT 和 RLHF<br>D. MiniMind 支持 transformers、vLLM、Ollama 等主流框架  </p>
+<details>
+<summary>查看答案</summary>
+
+<p><strong>C</strong>。MiniMind 覆盖了完整的训练链路：预训练（train_pretrain.py）、SFT（train_full_sft.py &#x2F; train_lora.py）、DPO（train_dpo.py）、PPO（train_ppo.py）、GRPO（train_grpo.py）、知识蒸馏（train_distillation.py）和 Agent 训练（train_agent.py）。</p>
+</details>
+
+<h3 id="题目-3（简答题）"><a href="#题目-3（简答题）" class="headerlink" title="题目 3（简答题）"></a>题目 3（简答题）</h3><p>请列出 MiniMind minimind-3 模型的 5 个核心配置参数及其值，并解释每个参数的含义。</p>
+<details>
+<summary>查看答案</summary>
+
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>值</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>hidden_size</code></td>
+<td>768</td>
+<td>隐藏层维度（d_model），决定了每个 token 的向量表示维度</td>
+</tr>
+<tr>
+<td><code>num_hidden_layers</code></td>
+<td>8</td>
+<td>Transformer Block 的层数，决定模型的深度</td>
+</tr>
+<tr>
+<td><code>num_attention_heads</code></td>
+<td>8</td>
+<td>Q 的注意力头数，决定从多少个角度计算注意力</td>
+</tr>
+<tr>
+<td><code>num_key_value_heads</code></td>
+<td>4</td>
+<td>K&#x2F;V 的注意力头数（GQA），每 2 个 Q 头共享 1 组 KV</td>
+</tr>
+<tr>
+<td><code>vocab_size</code></td>
+<td>6400</td>
+<td>词表大小，决定模型能识别多少种不同的 token</td>
+</tr>
+</tbody></table>
+<p>额外可提及：<code>intermediate_size</code>（约 2048，FFN 中间层维度）、<code>max_position_embeddings</code>（32768，最大序列长度）。</p>
+</details>
+
+<hr>
+<h2 id="🔮-下一节预告"><a href="#🔮-下一节预告" class="headerlink" title="🔮 下一节预告"></a>🔮 下一节预告</h2><p>Phase 1 的基础知识到此结束！你已经了解了大语言模型的原理、Transformer 的架构、PyTorch 的基本用法，以及 MiniMind 项目的全貌。</p>
+<p>在 Phase 2 中，我们将<strong>深入源码</strong>——从 MiniMind 的 Tokenizer 开始，逐个模块拆解模型代码，直到你能完全理解每一行代码的含义。</p>
+<p>👉 <strong>Phase 2 第一课：Tokenizer 分词器——如何把文字变成数字</strong></p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="http://example.com">XiaoYing</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="http://example.com/2026/05/09/L04-MiniMind%E9%A1%B9%E7%9B%AE%E5%AF%BC%E8%A7%88/">http://example.com/2026/05/09/L04-MiniMind%E9%A1%B9%E7%9B%AE%E5%AF%BC%E8%A7%88/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="http://example.com" target="_blank">XiaoYing-Blog🐈</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/MiniMind/">MiniMind</a><a class="post-meta__tags" href="/tags/%E9%A1%B9%E7%9B%AE%E5%AE%9E%E6%88%98/">项目实战</a></div><div class="post-share"><div class="social-share" data-image="/img/icon.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2026/05/09/L06-%E8%AF%8D%E5%B5%8C%E5%85%A5Embedding/" title="L06-词嵌入Embedding"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">L06-词嵌入Embedding</div></div><div class="info-2"><div class="info-item-1">L06 · 词嵌入 Embedding “把文字变成数字的魔法”   📋 本节目标学完本节，你将能够：  理解从 One-Hot 到 Dense Embedding 的演进过程 掌握 nn.Embedding 的本质——查表操作 理解嵌入维度 d_model&#x3D;768 的含义 掌握权重共享（Weight Tying）的原理和好处 计算 Embedding 层的参数量   🔗 前置知识 L05 · Tokenizer 分词器——知道 token id 是什么 线性代数基础：向量、矩阵、矩阵乘法 PyTorch 基础：nn.Module、nn.Linear   1. 从文字到向量：为什么需要 Embedding？1.1 问题：模型不认识整数上一节我们用 Tokenizer 把文字变成了整数序列： &quot;今天天气真好&quot; → [356, 1892, 478, 23]  但这些整数对模型来说毫无意义。数字 356 并不比 357 更接近”今”的含义。我们需要一种方式，让每个 token 变成一个有意义的向量，使得语义相似的词在向量空间中距离更近。 1.2 一个类...</div></div></div></a><a class="pagination-related" href="/2026/05/09/L05-Tokenizer%E5%88%86%E8%AF%8D%E5%99%A8/" title="L05-Tokenizer分词器"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">L05-Tokenizer分词器</div></div><div class="info-2"><div class="info-item-1">L05 · Tokenizer 分词器 “模型的第一本字典”   📋 本节目标学完本节，你将能够：  理解 Tokenizer 的作用——为什么模型不能直接读文字 掌握 BPE（Byte Pair Encoding）算法的核心原理 了解 MiniMind 词表设计（vocab_size&#x3D;6400）及其背后的权衡 理解特殊 token 和 chat_template 的工程意义 会分析压缩比、BPB、PPL 等评估指标   🔗 前置知识 L01 · 什么是大语言模型——了解 LLM 的基本工作方式 L04 · MiniMind 项目导览——知道 MiniMind 的项目结构 基本的 Python 知识（字符串操作、列表、字典）   1. 什么是 Tokenizer？1.1 人说文字，模型只懂数字想象你要和一个只认识数字的外星人交流。你说”你好”，外星人一脸懵。但如果你们约定好一本”字典”——“你”&#x3D;42，”好”&#x3D;17——那你把 [42, 17] 发过去，外星人就能理解了。 Tokenizer（分词器）就是这本字典。它负责两件事：  编码（Encod...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2026/05/09/L16-%E5%AE%8C%E6%95%B4%E6%A8%A1%E5%9E%8B%E7%BB%84%E8%A3%85/" title="L16-完整模型组装"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-05-09</div><div class="info-item-2">L16-完整模型组装</div></div><div class="info-2"><div class="info-item-1">L16 - 完整模型组装 “乐高积木拼出飞机”   📌 本节目标 回顾所有组件并理解它们的功能 理解 Transformer Block 的组装方式 掌握 MiniMindForCausalLM 的完整架构 学会计算模型参数量（面试必考） 理解自回归生成（generate）的过程   📚 前置知识 Phase 2 所有组件课程（Embedding、Attention、FFN、RMSNorm 等） Phase 3 训练课程（L11-L15） 基本的矩阵运算   1. 组件回顾在开始组装之前，让我们快速回顾每个组件的功能： 1.1 组件清单   组件 功能 输入 → 输出    Embedding 将 token ID 映射为向量 [batch, seq_len] → [batch, seq_len, dim]   RMSNorm 归一化，稳定训练 [batch, seq_len, dim] → [batch, seq_len, dim]   Attention (GQA) 捕获 token 间的关系 [batch, seq_len, dim] → [batch, seq_len...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/loading.gif" data-original="/img/icon.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">XiaoYing</div><div class="author-info-description">我们唯一不变的就是改变</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">22</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">35</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">2</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/XiaoYing-Blog"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/XiaoYing-Blog" target="_blank" title="GitHub"><i class="fab fa-github" style="color: #24292e;"></i></a><a class="social-icon" href="mailto:3442601927@qq.com" target="_blank" title="邮箱"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">欢迎来到我的博客！</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#L04-MiniMind-%E9%A1%B9%E7%9B%AE%E5%AF%BC%E8%A7%88"><span class="toc-number">1.</span> <span class="toc-text">L04 - MiniMind 项目导览</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%F0%9F%93%8C-%E6%9C%AC%E8%8A%82%E7%9B%AE%E6%A0%87"><span class="toc-number">1.1.</span> <span class="toc-text">📌 本节目标</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%F0%9F%93%9A-%E5%89%8D%E7%BD%AE%E7%9F%A5%E8%AF%86"><span class="toc-number">1.2.</span> <span class="toc-text">📚 前置知识</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%AD%A3%E6%96%87%E8%AE%B2%E8%A7%A3"><span class="toc-number">1.3.</span> <span class="toc-text">正文讲解</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-MiniMind-%E9%A1%B9%E7%9B%AE%E7%9A%84%E7%9B%AE%E6%A0%87%E5%92%8C%E8%AE%BE%E8%AE%A1%E5%93%B2%E5%AD%A6"><span class="toc-number">1.3.1.</span> <span class="toc-text">1. MiniMind 项目的目标和设计哲学</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-1-%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81-MiniMind%EF%BC%9F"><span class="toc-number">1.3.1.1.</span> <span class="toc-text">1.1 为什么需要 MiniMind？</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#1-2-%E6%A0%B8%E5%BF%83%E8%AE%BE%E8%AE%A1%E5%93%B2%E5%AD%A6"><span class="toc-number">1.3.1.2.</span> <span class="toc-text">1.2 核心设计哲学</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E9%A1%B9%E7%9B%AE%E7%9B%AE%E5%BD%95%E7%BB%93%E6%9E%84%E8%AF%A6%E8%A7%A3"><span class="toc-number">1.3.2.</span> <span class="toc-text">2. 项目目录结构详解</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E9%87%8D%E7%82%B9%E6%96%87%E4%BB%B6%E8%AF%A6%E8%A7%A3"><span class="toc-number">1.3.2.1.</span> <span class="toc-text">重点文件详解</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#model-model-minimind-py-%E2%80%94-%E9%A1%B9%E7%9B%AE%E4%B9%8B%E9%AD%82"><span class="toc-number">1.3.2.1.1.</span> <span class="toc-text">model&#x2F;model_minimind.py — 项目之魂</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#trainer-train-pretrain-py-%E2%80%94-%E8%AE%AD%E7%BB%83%E5%85%A5%E5%8F%A3"><span class="toc-number">1.3.2.1.2.</span> <span class="toc-text">trainer&#x2F;train_pretrain.py — 训练入口</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#eval-llm-py-%E2%80%94-%E5%BF%AB%E9%80%9F%E4%BD%93%E9%AA%8C"><span class="toc-number">1.3.2.1.3.</span> <span class="toc-text">eval_llm.py — 快速体验</span></a></li></ol></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E6%A8%A1%E5%9E%8B%E7%89%88%E6%9C%AC%E4%BB%8B%E7%BB%8D"><span class="toc-number">1.3.3.</span> <span class="toc-text">3. 模型版本介绍</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-%E6%A0%B8%E5%BF%83%E9%85%8D%E7%BD%AE%E5%8F%82%E6%95%B0%E8%A1%A8"><span class="toc-number">1.3.4.</span> <span class="toc-text">4. 核心配置参数表</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%8F%82%E6%95%B0%E9%87%8F%E6%80%8E%E4%B9%88%E7%AE%97%EF%BC%9F"><span class="toc-number">1.3.4.1.</span> <span class="toc-text">参数量怎么算？</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA%E6%AD%A5%E9%AA%A4"><span class="toc-number">1.3.5.</span> <span class="toc-text">5. 环境搭建步骤</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%AC%AC-1-%E6%AD%A5%EF%BC%9A%E5%85%8B%E9%9A%86%E9%A1%B9%E7%9B%AE"><span class="toc-number">1.3.5.1.</span> <span class="toc-text">第 1 步：克隆项目</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%AC%AC-2-%E6%AD%A5%EF%BC%9A%E5%88%9B%E5%BB%BA%E8%99%9A%E6%8B%9F%E7%8E%AF%E5%A2%83%EF%BC%88%E6%8E%A8%E8%8D%90%EF%BC%89"><span class="toc-number">1.3.5.2.</span> <span class="toc-text">第 2 步：创建虚拟环境（推荐）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%AC%AC-3-%E6%AD%A5%EF%BC%9A%E5%AE%89%E8%A3%85-PyTorch"><span class="toc-number">1.3.5.3.</span> <span class="toc-text">第 3 步：安装 PyTorch</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%AC%AC-4-%E6%AD%A5%EF%BC%9A%E5%AE%89%E8%A3%85%E9%A1%B9%E7%9B%AE%E4%BE%9D%E8%B5%96"><span class="toc-number">1.3.5.4.</span> <span class="toc-text">第 4 步：安装项目依赖</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%AC%AC-5-%E6%AD%A5%EF%BC%9A%E6%A3%80%E6%9F%A5-GPU"><span class="toc-number">1.3.5.5.</span> <span class="toc-text">第 5 步：检查 GPU</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-%E5%BF%AB%E9%80%9F%E4%BD%93%E9%AA%8C%EF%BC%9A%E4%B8%8B%E8%BD%BD%E9%A2%84%E8%AE%AD%E7%BB%83%E6%A8%A1%E5%9E%8B%E5%B9%B6%E8%BF%90%E8%A1%8C%E6%8E%A8%E7%90%86"><span class="toc-number">1.3.6.</span> <span class="toc-text">6. 快速体验：下载预训练模型并运行推理</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%96%B9%E6%B3%95-1%EF%BC%9A%E9%80%9A%E8%BF%87-HuggingFace-%E4%B8%8B%E8%BD%BD%EF%BC%88%E6%8E%A8%E8%8D%90%EF%BC%89"><span class="toc-number">1.3.6.1.</span> <span class="toc-text">方法 1：通过 HuggingFace 下载（推荐）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%96%B9%E6%B3%95-2%EF%BC%9A%E6%89%8B%E5%8A%A8%E4%B8%8B%E8%BD%BD"><span class="toc-number">1.3.6.2.</span> <span class="toc-text">方法 2：手动下载</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E8%BF%90%E8%A1%8C%E6%8E%A8%E7%90%86"><span class="toc-number">1.3.6.3.</span> <span class="toc-text">运行推理</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E8%BF%90%E8%A1%8C-Web-Demo"><span class="toc-number">1.3.6.4.</span> <span class="toc-text">运行 Web Demo</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#7-%E8%AE%AD%E7%BB%83%E6%95%B0%E6%8D%AE%E7%9A%84%E8%8E%B7%E5%8F%96%E6%96%B9%E5%BC%8F"><span class="toc-number">1.3.7.</span> <span class="toc-text">7. 训练数据的获取方式</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E9%A2%84%E8%AE%AD%E7%BB%83%E6%95%B0%E6%8D%AE"><span class="toc-number">1.3.7.1.</span> <span class="toc-text">预训练数据</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#SFT-%E6%95%B0%E6%8D%AE"><span class="toc-number">1.3.7.2.</span> <span class="toc-text">SFT 数据</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#8-MiniMind-%E7%9A%84%E6%8A%80%E6%9C%AF%E7%89%B9%E8%89%B2"><span class="toc-number">1.3.8.</span> <span class="toc-text">8. MiniMind 的技术特色</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#8-1-%E7%BA%AF-PyTorch-%E5%8E%9F%E7%94%9F%E5%AE%9E%E7%8E%B0"><span class="toc-number">1.3.8.1.</span> <span class="toc-text">8.1 纯 PyTorch 原生实现</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#8-2-%E4%B8%8E-LLaMA-%E6%9E%B6%E6%9E%84%E4%B8%80%E8%84%89%E7%9B%B8%E6%89%BF"><span class="toc-number">1.3.8.2.</span> <span class="toc-text">8.2 与 LLaMA 架构一脉相承</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#8-3-%E8%A6%86%E7%9B%96%E5%85%A8%E8%AE%AD%E7%BB%83%E9%93%BE%E8%B7%AF"><span class="toc-number">1.3.8.3.</span> <span class="toc-text">8.3 覆盖全训练链路</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#9-%E5%85%BC%E5%AE%B9%E4%B8%BB%E6%B5%81%E6%A1%86%E6%9E%B6"><span class="toc-number">1.3.9.</span> <span class="toc-text">9. 兼容主流框架</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#10-%E9%9D%A2%E8%AF%95%E4%B8%AD%E5%A6%82%E4%BD%95%E4%BB%8B%E7%BB%8D-MiniMind"><span class="toc-number">1.3.10.</span> <span class="toc-text">10. 面试中如何介绍 MiniMind</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%F0%9F%93%82-%E5%AF%B9%E5%BA%94-MiniMind-%E6%BA%90%E7%A0%81"><span class="toc-number">1.4.</span> <span class="toc-text">📂 对应 MiniMind 源码</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%F0%9F%8E%A4-%E9%9D%A2%E8%AF%95%E8%80%83%E7%82%B9"><span class="toc-number">1.5.</span> <span class="toc-text">🎤 面试考点</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Q1-%E4%B8%BA%E4%BB%80%E4%B9%88%E9%80%89%E6%8B%A9-MiniMind-%E6%9D%A5%E5%AD%A6%E4%B9%A0%E5%A4%A7%E6%A8%A1%E5%9E%8B%EF%BC%9F%E5%AE%83%E6%9C%89%E4%BB%80%E4%B9%88%E4%BC%98%E5%8A%BF%EF%BC%9F"><span class="toc-number">1.5.1.</span> <span class="toc-text">Q1: 为什么选择 MiniMind 来学习大模型？它有什么优势？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Q2-MiniMind-%E7%9A%84%E6%A8%A1%E5%9E%8B%E5%8F%82%E6%95%B0%E9%87%8F%E6%98%AF%E6%80%8E%E4%B9%88%E8%AE%A1%E7%AE%97%E5%87%BA%E6%9D%A5%E7%9A%84%EF%BC%9F"><span class="toc-number">1.5.2.</span> <span class="toc-text">Q2: MiniMind 的模型参数量是怎么计算出来的？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Q3-MiniMind-%E5%92%8C-LLaMA-%E5%9C%A8%E6%9E%B6%E6%9E%84%E4%B8%8A%E6%9C%89%E5%93%AA%E4%BA%9B%E7%9B%B8%E5%90%8C%E7%82%B9%E5%92%8C%E4%B8%8D%E5%90%8C%E7%82%B9%EF%BC%9F"><span class="toc-number">1.5.3.</span> <span class="toc-text">Q3: MiniMind 和 LLaMA 在架构上有哪些相同点和不同点？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Q4-%E5%A4%A7%E6%A8%A1%E5%9E%8B%E8%AE%AD%E7%BB%83%E7%9A%84%E5%AE%8C%E6%95%B4%E6%B5%81%E7%A8%8B%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9FMiniMind-%E8%A6%86%E7%9B%96%E4%BA%86%E5%93%AA%E4%BA%9B%EF%BC%9F"><span class="toc-number">1.5.4.</span> <span class="toc-text">Q4: 大模型训练的完整流程是什么？MiniMind 覆盖了哪些？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Q5-%E5%A6%82%E4%BD%95%E5%BF%AB%E9%80%9F%E4%BC%B0%E7%AE%97%E4%B8%80%E4%B8%AA%E6%A8%A1%E5%9E%8B%E9%9C%80%E8%A6%81%E5%A4%9A%E5%B0%91-GPU-%E6%98%BE%E5%AD%98%EF%BC%9F"><span class="toc-number">1.5.5.</span> <span class="toc-text">Q5: 如何快速估算一个模型需要多少 GPU 显存？</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E2%9C%85-%E8%87%AA%E6%B5%8B%E9%A2%98"><span class="toc-number">1.6.</span> <span class="toc-text">✅ 自测题</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%A2%98%E7%9B%AE-1%EF%BC%88%E9%80%89%E6%8B%A9%E9%A2%98%EF%BC%89"><span class="toc-number">1.6.1.</span> <span class="toc-text">题目 1（选择题）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%A2%98%E7%9B%AE-2%EF%BC%88%E9%80%89%E6%8B%A9%E9%A2%98%EF%BC%89"><span class="toc-number">1.6.2.</span> <span class="toc-text">题目 2（选择题）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%A2%98%E7%9B%AE-3%EF%BC%88%E7%AE%80%E7%AD%94%E9%A2%98%EF%BC%89"><span class="toc-number">1.6.3.</span> <span class="toc-text">题目 3（简答题）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%F0%9F%94%AE-%E4%B8%8B%E4%B8%80%E8%8A%82%E9%A2%84%E5%91%8A"><span class="toc-number">1.7.</span> <span class="toc-text">🔮 下一节预告</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/05/09/L01-%E4%BB%80%E4%B9%88%E6%98%AF%E5%A4%A7%E8%AF%AD%E8%A8%80%E6%A8%A1%E5%9E%8B/" title="L01-什么是大语言模型">L01-什么是大语言模型</a><time datetime="2026-05-08T16:00:00.000Z" title="发表于 2026-05-09 00:00:00">2026-05-09</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/05/09/L03-PyTorch%E5%BF%AB%E9%80%9F%E4%B8%8A%E6%89%8B/" title="L03-PyTorch快速上手">L03-PyTorch快速上手</a><time datetime="2026-05-08T16:00:00.000Z" title="发表于 2026-05-09 00:00:00">2026-05-09</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/05/09/L02-Transformer%E5%85%A8%E6%99%AF%E5%9B%BE/" title="L02-Transformer全景图">L02-Transformer全景图</a><time datetime="2026-05-08T16:00:00.000Z" title="发表于 2026-05-09 00:00:00">2026-05-09</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/05/09/L05-Tokenizer%E5%88%86%E8%AF%8D%E5%99%A8/" title="L05-Tokenizer分词器">L05-Tokenizer分词器</a><time datetime="2026-05-08T16:00:00.000Z" title="发表于 2026-05-09 00:00:00">2026-05-09</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/05/09/L04-MiniMind%E9%A1%B9%E7%9B%AE%E5%AF%BC%E8%A7%88/" title="L04-MiniMind项目导览">L04-MiniMind项目导览</a><time datetime="2026-05-08T16:00:00.000Z" title="发表于 2026-05-09 00:00:00">2026-05-09</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2026 By XiaoYing</span></div><div class="footer_custom_text">🌸 愿所有努力，皆有回响 🌸</div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.4"></script><script src="/js/main.js?v=5.5.4"></script><div class="js-pjax"></div><script defer src="/js/cursor.js"></script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索文章" type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.4"></script></div></div><script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script>
+        <style>
+            [bg-lazy] {
+                background-image: none !important;
+                background-color: #eee !important;
+            }
+        </style>
+        <script>
+            window.imageLazyLoadSetting = {
+                isSPA: false,
+                preloadRatio: 1,
+                processImages: null,
+            };
+        </script><script>window.addEventListener("load",function(){var t=/\.(gif|jpg|jpeg|tiff|png)$/i,r=/^data:image\/[a-z\d\-\.\+]+;base64,/;Array.prototype.slice.call(document.querySelectorAll("img[data-original]")).forEach(function(a){var e=a.parentNode;"A"===e.tagName&&(t.test(e.href)||r.test(e.href))&&(e.href=a.dataset.original)})});</script><script>(r=>{r.imageLazyLoadSetting.processImages=t;var a=r.imageLazyLoadSetting.isSPA,o=r.imageLazyLoadSetting.preloadRatio||1,d=i();function i(){var t=Array.prototype.slice.call(document.querySelectorAll("img[data-original]")),e=Array.prototype.slice.call(document.querySelectorAll("[bg-lazy]"));return t.concat(e)}function t(t){(a||t)&&(d=i());for(var e,n=0;n<d.length;n++)0<=(e=(e=d[n]).getBoundingClientRect()).bottom&&0<=e.left&&e.top<=(r.innerHeight*o||document.documentElement.clientHeight*o)&&(()=>{var t,e,a,o,i=d[n];e=function(){d=d.filter(function(t){return i!==t}),r.imageLazyLoadSetting.onImageLoaded&&r.imageLazyLoadSetting.onImageLoaded(i)},(t=i).dataset.loaded||(t.hasAttribute("bg-lazy")?(t.removeAttribute("bg-lazy"),e&&e()):(a=new Image,o=t.getAttribute("data-original"),a.onload=function(){t.src=o,t.removeAttribute("data-original"),t.setAttribute("data-loaded",!0),e&&e()},a.onerror=function(){t.removeAttribute("data-original"),t.setAttribute("data-loaded",!1),t.src=o},t.src!==o&&(a.src=o)))})()}function e(){clearTimeout(t.tId),t.tId=setTimeout(t,500)}t(),document.addEventListener("scroll",e),r.addEventListener("resize",e),r.addEventListener("orientationchange",e)})(this);</script></body></html>
