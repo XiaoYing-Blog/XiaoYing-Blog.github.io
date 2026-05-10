@@ -1,0 +1,685 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>YOLOv1目标检测全面总结 | XiaoYing-Blog🐈</title><meta name="author" content="XiaoYing"><meta name="copyright" content="XiaoYing"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="YOLOv1目标检测算法全面总结，从目标检测基础到YOLO核心原理">
+<meta property="og:type" content="article">
+<meta property="og:title" content="YOLOv1目标检测全面总结">
+<meta property="og:url" content="http://example.com/2026/05/07/yolov1/index.html">
+<meta property="og:site_name" content="XiaoYing-Blog🐈">
+<meta property="og:description" content="YOLOv1目标检测算法全面总结，从目标检测基础到YOLO核心原理">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://picsum.photos/seed/yolo/800/400">
+<meta property="article:published_time" content="2026-05-06T16:00:00.000Z">
+<meta property="article:modified_time" content="2026-05-10T08:40:27.794Z">
+<meta property="article:author" content="XiaoYing">
+<meta property="article:tag" content="YOLO">
+<meta property="article:tag" content="深度学习">
+<meta property="article:tag" content="目标检测">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://picsum.photos/seed/yolo/800/400"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "YOLOv1目标检测全面总结",
+  "url": "http://example.com/2026/05/07/yolov1/",
+  "image": "https://picsum.photos/seed/yolo/800/400",
+  "datePublished": "2026-05-06T16:00:00.000Z",
+  "dateModified": "2026-05-10T08:40:27.794Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "XiaoYing",
+      "url": "http://example.com"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="http://example.com/2026/05/07/yolov1/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.4"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":false,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'YOLOv1目标检测全面总结',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/custom.css"><!-- hexo injector head_end start --><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-butterfly-swiper/lib/swiper.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/hexo-butterfly-swiper/lib/swiperstyle.css" media="print" onload="this.media='all'"><!-- hexo injector head_end end --><meta name="generator" content="Hexo 8.1.2"></head><body><div class="bg-animation" id="web_bg" style="background-image: url(/img/avg.jpg);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/loading.gif" data-original="/img/icon.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">23</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">37</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">2</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/comments/"><i class="fa-fw fas fa-envelope-open"></i><span> 留言板</span></a></div><div class="menus_item"><a class="site-page" href="/link"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(https://picsum.photos/seed/yolo/800/400);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">XiaoYing-Blog🐈</span></a><a class="nav-page-title" href="/"><span class="site-name">YOLOv1目标检测全面总结</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/comments/"><i class="fa-fw fas fa-envelope-open"></i><span> 留言板</span></a></div><div class="menus_item"><a class="site-page" href="/link"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">YOLOv1目标检测全面总结</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-05-06T16:00:00.000Z" title="发表于 2026-05-07 00:00:00">2026-05-07</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-05-10T08:40:27.794Z" title="更新于 2026-05-10 16:40:27">2026-05-10</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">5.9k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>20分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><!-- 这是一张图片，ocr 内容为： -->
+<p><img src="/img/loading.gif" data-original="https://cdn.nlark.com/yuque/0/2026/png/66153451/1776522080347-975a554a-6152-4eb9-82ba-b2da6c0aa748.png"></p>
+<p><font style="color:#DF2A3F;">预测（测试过程，模型正向推断） &#x3D; 用训练好的网络跑前向传播 + 后处理，直接拿到最终检测结果；  </font></p>
+<p><font style="color:#DF2A3F;">训练 &#x3D; 把前向传播的网络参数练好，让 7×7×30 输出尽可能准。</font></p>
+<!-- 这是一张图片，ocr 内容为： -->
+<p><img src="/img/loading.gif" data-original="https://cdn.nlark.com/yuque/0/2026/png/66153451/1776416279804-0c2b0bb7-a68e-4bab-a35d-051fac87bb74.png"></p>
+<h2 id="一、YOLOv1-基础背景"><a href="#一、YOLOv1-基础背景" class="headerlink" title="一、YOLOv1 基础背景"></a><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">一、YOLOv1 基础背景</font></h2><ol>
+<li><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">提出时间</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">：2015 年，Joseph Redmon</font></li>
+<li><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">定位</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">：</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">单阶段目标检测算法【解决了两阶段依赖候选区域，实现了端到端的实时检测】</font></strong></li>
+</ol>
+<ul>
+<li>目标检测**（监督学习）**的步骤:</li>
+</ul>
+<p><font style="color:rgb(0,0,0);">步骤一：检测目标位置（生成矩形框） </font></p>
+<p><font style="color:rgb(0,0,0);">步骤二：对目标物体进行分类<br></font><!-- 这是一张图片，ocr 内容为： --><br><img src="/img/loading.gif" data-original="https://cdn.nlark.com/yuque/0/2026/png/66153451/1776385693895-946bb28f-ef76-4fcb-8ce1-c779908bb3bf.png"></p>
+<ol start="3">
+<li><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">核心思想</font></strong></li>
+</ol>
+<p><font style="color:rgb(0,0,0);">将目标检测任务看作是一个</font><strong><font style="color:rgb(0,0,0);">回归问题</font></strong><font style="color:rgb(0,0,0);">，并且可以在一个神经网络中</font><strong><font style="color:rgb(0,0,0);">同时</font></strong><font style="color:rgb(0,0,0);">预测目标的位置和类别。</font></p>
+<ul>
+<li><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">无需提取候选区域</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">：摒弃了 R-CNN&#x2F;Faster R-CNN 中生成 Anchor&#x2F;Region Proposal 的复杂步骤。</font></li>
+<li><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">无复杂上下游处理</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">：流程统一，无需多阶段流水线。</font></li>
+<li><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">一次前向推断</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">：输入图片，网络</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">一次推理</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">即可输出所有结果。</font></li>
+<li><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">端到端训练</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">：单个网络直接优化损失函数，训练流程极简。</font></li>
+</ul>
+<ol start="4">
+<li><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">对比</font></strong><ul>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">单阶段：YOLO 系列</font></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">双阶段：Faster R-CNN 等</font></li>
+</ul>
+</li>
+</ol>
+<hr>
+<h2 id="二、YOLOv1-网络结构"><a href="#二、YOLOv1-网络结构" class="headerlink" title="二、YOLOv1 网络结构"></a><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">二、YOLOv1 网络结构</font></h2><!-- 这是一张图片，ocr 内容为： -->
+<p><img src="/img/loading.gif" data-original="https://cdn.nlark.com/yuque/0/2026/png/66153451/1776385755986-8d6ad9e1-288c-4d8e-8f8d-1dcd87fd5a2e.png"></p>
+<p>24层卷积层提取图像，2层全连接层回归得到7<em>7</em>30的张量</p>
+<h3 id="1-输入"><a href="#1-输入" class="headerlink" title="1. 输入"></a><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">1. 输入</font></h3><ul>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">固定尺寸：</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">448 × 448 × 3</font></strong></li>
+</ul>
+<h3 id="2-整体流程"><a href="#2-整体流程" class="headerlink" title="2. 整体流程"></a><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">2. 整体流程</font></h3><ol>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">输入图像经过</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">多层卷积 + 池化</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">下采样</font></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">得到特征图：</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">7 × 7 × 1024</font></strong></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">经过</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">两层全连接层</font></strong></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">最终输出：</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">7 × 7 × 30</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);"> 张量</font></li>
+</ol>
+<h3 id="3-激活函数规则"><a href="#3-激活函数规则" class="headerlink" title="3. 激活函数规则"></a><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">3. 激活函数规则</font></h3><ul>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">除</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">最后一层</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">使用</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">线性激活函数</font></strong><ul>
+<li>线性激活函数是输入与输出成正比例关系的函数（多层线性组合仍然是线性，无法你和复杂数据分布）</li>
+</ul>
+</li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">其余所有层都使用：</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">Leaky ReLU</font></strong></li>
+</ul>
+<h3 id="4-训练防止过拟合"><a href="#4-训练防止过拟合" class="headerlink" title="4. 训练防止过拟合"></a><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">4. 训练防止过拟合</font></h3><ul>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">使用 </font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">Dropout</font></strong></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">使用 </font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">数据增强</font></strong></li>
+</ul>
+<h3 id="5-两阶段训练策略"><a href="#5-两阶段训练策略" class="headerlink" title="5.两阶段训练策略"></a>5.两阶段训练策略</h3><ul>
+<li><strong>预训练阶段</strong>：先在 ImageNet 数据集上以224*224的分辨率训练前 20 个卷积层，做图像分类任务。</li>
+<li><strong>微调检测阶段</strong>：将输入分辨率提升至 448 *448，加上最后 4 个卷积层和 2 个全连接层，针对检测任务进行微调。</li>
+</ul>
+<!-- 这是一张图片，ocr 内容为： -->
+<p><img src="/img/loading.gif" data-original="https://cdn.nlark.com/yuque/0/2026/png/66153451/1776419489556-61b9bfdb-4dba-4e3d-aac3-4de7c17fdbb1.png"></p>
+<hr>
+<h2 id="三、预测阶段：yolo模型正向推断（测试过程）"><a href="#三、预测阶段：yolo模型正向推断（测试过程）" class="headerlink" title="三、预测阶段：yolo模型正向推断（测试过程）"></a>三、预测阶段：yolo模型正向推断（测试过程）</h2><!-- 这是一张图片，ocr 内容为： -->
+<p><img src="/img/loading.gif" data-original="https://cdn.nlark.com/yuque/0/2026/png/66153451/1776522494002-85549f37-397d-4dc9-9efc-d80c1b841dd8.png"></p>
+<p><font style="color:#74B602;">每个框只能预测一个类别，也就是说对于yolov1而言，最多预测49个物体</font></p>
+<h3 id="3-1-YOLOv1输出结果"><a href="#3-1-YOLOv1输出结果" class="headerlink" title="3.1 YOLOv1输出结果"></a><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">3.1 YOLOv1输出结果</font></h3><h4 id="1-大致结果解析（7730最为关键，是区分与普通卷积分类网络的关键）"><a href="#1-大致结果解析（7730最为关键，是区分与普通卷积分类网络的关键）" class="headerlink" title="1.大致结果解析（7730最为关键，是区分与普通卷积分类网络的关键）"></a>1.大致结果解析（7<em>7</em>30最为关键，是区分与普通卷积分类网络的关键）</h4><p><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">YOLOv1 的最终输出是 </font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">7×7×30（49个结果，每个结果是30*1的向量）</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);"> 张量，这是它与普通卷积分类网络最核心的区别：</font></p>
+<ul>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">普通卷积网络：只输出</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">类别概率</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">，不预测目标位置。</font></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">YOLOv1：将输入图像</font><strong><font style="color:#DF2A3F;background-color:rgba(0, 0, 0, 0);">逻辑上</font>****<font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">划分为 7×7 个网格（grid cell）</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">，实际上并没有划分，每个网格</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">对应</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">输出 30 维信息，</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">同时完成定位、置信度评估、分类</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">三大任务。</font></li>
+</ul>
+<!-- 这是一张图片，ocr 内容为： -->
+<p><img src="/img/loading.gif" data-original="https://cdn.nlark.com/yuque/0/2026/png/66153451/1776389962699-7e1a161b-c38e-444a-83e0-18e0e5d0ad35.png"></p>
+<ul>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">30 维组成：</font><ul>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">每个网格预测 </font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">2 个边界框（Bounding Box）</font></strong></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">每个框 5 个参数：x, y, w, h, c → 2×5&#x3D;10 维</font></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">每个网格预测 </font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">20 个类别概率</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);"> → 20 维</font></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">10 + 20 &#x3D; </font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">30 维</font></strong></li>
+</ul>
+</li>
+</ul>
+<!-- 这是一张图片，ocr 内容为： -->
+<p><img src="/img/loading.gif" data-original="https://cdn.nlark.com/yuque/0/2026/png/66153451/1776521636507-cf8af7eb-f096-443e-9fab-6c6e253d0e98.png"></p>
+<h4 id="2-（x-y-w-h）"><a href="#2-（x-y-w-h）" class="headerlink" title="2.（x,y,w,h）"></a>2.（x,y,w,h）</h4><p><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">每个边界框都包含这 4 个位置信息，全部</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">归一化到 0~1</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">：</font></p>
+<ul>
+<li><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">x, y</font></strong><ul>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">表示边界框</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">中心点坐标</font></strong></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">以当前 grid cell </font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">左上角为 (0,0)</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);"> 做归一化</font></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">中心点</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">必须落在当前网格内</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">，由该网格负责预测</font></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">取值：0~1</font></li>
+</ul>
+</li>
+</ul>
+<!-- 这是一张图片，ocr 内容为： -->
+<p><img src="/img/loading.gif" data-original="https://cdn.nlark.com/yuque/0/2026/png/66153451/1776390226740-c0ccd8ee-8df0-454b-9bed-31cbc216bf5f.png"></p>
+<ul>
+<li><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">w, h</font></strong><ul>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">表示边界框的</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">宽度和高度</font></strong></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">相对于 整张输入图像（448×448） 做归一化</font></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">取值：0~1</font></li>
+</ul>
+</li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">损失计算特点：对 w、h </font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">开根号</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">后再算平方差，降低大小框尺度差异。</font></li>
+</ul>
+<h4 id="3-置信度之iou"><a href="#3-置信度之iou" class="headerlink" title="3.置信度之iou"></a>3.置信度之iou</h4><p>测试的时候，怎样才能判定我预测对了，需要一个定量指标（iou就是）</p>
+<ul>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">全称：</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">Intersection Over Union（交并比）</font></strong></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">公式：</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">IOU &#x3D; 预测框与真实框的交集面积 ÷ 并集面积</font></strong></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">核心作用：</font></li>
+</ul>
+<ol>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">衡量预测框与真实框的</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">定位精准度</font></strong></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">是计算置信度的关键因子</font></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">是非极大值抑制（NMS）去重的判断依据</font></li>
+</ol>
+<!-- 这是一张图片，ocr 内容为： -->
+<p><img src="/img/loading.gif" data-original="https://cdn.nlark.com/yuque/0/2026/png/66153451/1776519488225-ab0bd5dc-9253-4fae-9bcd-3656f120b685.png"></p>
+<!-- 这是一张图片，ocr 内容为： -->
+<p><img src="/img/loading.gif" data-original="https://cdn.nlark.com/yuque/0/2026/png/66153451/1776519566391-7d4c27ee-8fea-4a92-955d-648245bd6c83.png"></p>
+<h4 id="4-置信度"><a href="#4-置信度" class="headerlink" title="4.置信度"></a>4.置信度</h4><p><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">置信度有</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">双重含义</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">，是 YOLOv1 输出的核心指标：</font></p>
+<ul>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">公式：</font></li>
+</ul>
+<!-- 这是一张图片，ocr 内容为： -->
+<p><img src="/img/loading.gif" data-original="https://cdn.nlark.com/yuque/0/2026/png/66153451/1776390444906-0b752dcf-07ec-4a93-9d92-d0dd43779e8b.png"></p>
+<ul>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">含义 1：Pr (Object) → 当前框内</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">是否有目标</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">（有 &#x3D; 1，无 &#x3D; 0）</font></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">含义 2：IOU → 预测框与真实框的重合度，代表</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">框得准不准</font></strong><ul>
+<li>真实框：</li>
+<li><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">在训练阶段，人工标注的实体框</font></strong></li>
+<li><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">测试阶段，模型自己假想的实体框</font></strong></li>
+</ul>
+</li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">总结：置信度既表示框里有没有物体，也表示模型对该框的</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">自信程度</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">。</font></li>
+</ul>
+<h4 id="5-概率数值"><a href="#5-概率数值" class="headerlink" title="5.概率数值"></a>5.概率数值</h4><ul>
+<li><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">网格级共享</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">：每网格仅输出一组</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">20 类概率</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">，网格内所有框共用</font></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">维度：20*1</font></li>
+</ul>
+<!-- 这是一张图片，ocr 内容为： -->
+<p><img src="/img/loading.gif" data-original="https://cdn.nlark.com/yuque/0/2026/png/66153451/1776416494025-ad70c538-56d1-4690-ba9d-10d78d6446f3.png"></p>
+<hr>
+<h3 id="3-2-YOLOv1后处理流程"><a href="#3-2-YOLOv1后处理流程" class="headerlink" title="3.2 YOLOv1后处理流程"></a><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">3.2 YOLOv1后处理流程</font></h3><p><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">YOLOv1 在</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">预测阶段</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">会产生大量初始检测框：整张图片被划分为 7×7&#x3D;49 个网格，每个网格会输出 2 个边界框，因此模型一次推理会直接生成 </font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">49×2&#x3D;98 个预测框</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">。这些框的置信度 c 各不相同，置信度越高表示模型对该框的预测越自信，在可视化时通常表现为颜色更深；置信度越低则表示框内更可能是背景，颜色更浅。</font></p>
+<p><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">然而，一张图中真实存在的目标数量有限，</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">绝大多数预测框都是重复框或背景框</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">，不能直接全部输出。为了得到干净、准确、只框出真实目标的检测结果，必须对这 98 个原始框进行两步筛选，剔除无效框与重复框。</font></p>
+<h4 id="1-置信度阈值过滤"><a href="#1-置信度阈值过滤" class="headerlink" title="1.置信度阈值过滤"></a><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">1.置信度阈值过滤</font></h4><ul>
+<li><strong>类别置信度</strong></li>
+</ul>
+<p>**是该网格有目标的概率 × 预测框与真实框的 IOU × ****<font style="color:#DF2A3F;">该类别的条件概率</font>**</p>
+<!-- 这是一张图片，ocr 内容为： -->
+<p><img src="/img/loading.gif" data-original="https://cdn.nlark.com/yuque/0/2026/png/66153451/1776418888679-a9ac009c-2c90-4468-8521-bfdd4a22f695.png"></p>
+<p>口诀：有没有，是不是，全不全</p>
+<ul>
+<li>先对网格里面两个框的类别置信度进行比大小，剔除低的那个，不与类别置信度阈值相比（因为一个网格只能负责一个类别，且概率被一个网格里面的两个框共用）</li>
+<li>先设定一个置信度阈值（如 0.5 或 0.6），<strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">直接剔除置信度低于阈值的框</font></strong>。这些低置信度框大多对应背景、模糊区域或模型不确定的预测，过滤后可大幅减少无效框数量，只保留模型认为 “大概率是目标” 的框。</li>
+</ul>
+<h4 id="2-NMS非极大值抑制"><a href="#2-NMS非极大值抑制" class="headerlink" title="2.NMS非极大值抑制"></a>2.NMS非极大值抑制</h4><p>作用：删除冗余候选框，从而提高目标检测的精度</p>
+<p> 不同类别独立处理，保留高置信度框，剔除 IOU &gt; 阈值（通常 0.5）的重复框 </p>
+<p><font style="color:rgb(0,0,0);">NMS是针对不同类别检测框独立且并行处理，以篮球检测为例，NMS算法流程： </font></p>
+<p><strong><font style="color:rgb(0,0,0);">1、</font></strong><font style="color:rgb(0,0,0);">选取篮球检测box中的置信度最大的那一个box，记为box_best,并保留它。 </font></p>
+<p><strong><font style="color:rgb(0,0,0);">2、</font></strong><font style="color:rgb(0,0,0);">计算box_best与其余篮球检测的box的IOU。在计算该步骤之前，需要设置一个IOU的阈值，该阈值往往设为0.5。 </font></p>
+<p><strong><font style="color:rgb(0,0,0);">3、</font></strong><font style="color:rgb(0,0,0);">如果IOU&gt;0.5，那么就舍弃这个box（由于可能两个box表示同一目标，所以保留分数高的那一个）。 </font></p>
+<p><strong><font style="color:rgb(0,0,0);">4、</font></strong><font style="color:rgb(0,0,0);">从最后剩余的boxes中，再找到最大置信度的那一个，如此循环往复。</font></p>
+<p>例如：<!-- 这是一张图片，ocr 内容为： --><br><img src="/img/loading.gif" data-original="https://cdn.nlark.com/yuque/0/2026/png/66153451/1776519450675-191f6f4d-3d41-4486-b738-319b2f6a8dd8.png"></p>
+<!-- 这是一张图片，ocr 内容为： -->
+<p><img src="/img/loading.gif" data-original="https://cdn.nlark.com/yuque/0/2026/png/66153451/1776520210684-332c62b8-fb62-4bd3-8978-5c36397fa278.png"></p>
+<!-- 这是一张图片，ocr 内容为： -->
+<p><img src="/img/loading.gif" data-original="https://cdn.nlark.com/yuque/0/2026/png/66153451/1776519997588-3bfe6ab9-48cb-46b1-9377-74a37db00b0e.png"></p>
+<hr>
+<h2 id="四、训练阶段（反向传播）"><a href="#四、训练阶段（反向传播）" class="headerlink" title="四、训练阶段（反向传播）"></a>四、训练阶段（反向传播）</h2><h3 id="4-1-想要达到的效果"><a href="#4-1-想要达到的效果" class="headerlink" title="4.1 想要达到的效果"></a>4.1 想要达到的效果</h3><p><font style="color:#74B602;">也就是说白了，反向传播想要达到的效果就是负责检测物体的grid cell里的其中一个预测框要和真实框的宽高，中心点，概率与真实框进行匹配，另外一个预测框只让他的置信度越低越好，其余没有负责检测物体的grid cell两个预测框的置信度都需要低。（这与4.2损失函数5种损失函数是一一匹配的）</font></p>
+<h4 id="1-有ground-truth中心点落在的grid-cell：truthbox应该由其中心点所在位置的网格的两个框进行拟合；同时该网格所表现的类别，也得是真实框的类别"><a href="#1-有ground-truth中心点落在的grid-cell：truthbox应该由其中心点所在位置的网格的两个框进行拟合；同时该网格所表现的类别，也得是真实框的类别" class="headerlink" title="1.有ground truth中心点落在的grid cell：truthbox应该由其中心点所在位置的网格的两个框进行拟合；同时该网格所表现的类别，也得是真实框的类别"></a>1.有ground truth中心点落在的grid cell：<font style="color:rgba(0, 0, 0, 0.85);background-color:rgba(0, 0, 0, 0.04);">truthbox应该由其中心点所在位置的网格的两个框进行拟合；同时该网格所表现的类别，也得是真实框的类别</font></h4><p>此时粗线框是真实框，小的虚线框是被入冷宫的那个，反向传播时候使他的置信度小，大的虚线框是真正与真实框拟合的框，反向传播时使它的框尽可能拟合真是框</p>
+<!-- 这是一张图片，ocr 内容为： -->
+<p><img src="/img/loading.gif" data-original="https://cdn.nlark.com/yuque/0/2026/png/66153451/1776523494675-2d589ca5-7e52-4ff9-bd68-987d7593e871.png"></p>
+<h4 id="2-没有ground-truth中心点落在的grid-cell里面，就使得该grid-cell的两个预测框越小越好"><a href="#2-没有ground-truth中心点落在的grid-cell里面，就使得该grid-cell的两个预测框越小越好" class="headerlink" title="2.没有ground truth中心点落在的grid cell里面，就使得该grid cell的两个预测框越小越好"></a>2.没有ground truth中心点落在的grid cell里面，就使得该grid cell的两个预测框越小越好</h4><!-- 这是一张图片，ocr 内容为： -->
+<p><img src="/img/loading.gif" data-original="https://cdn.nlark.com/yuque/0/2026/png/66153451/1776596482404-8b0ec262-b8d7-468e-b986-5f2eeece26c4.png"></p>
+<h3 id="4-2-反向传播（训练阶段，计算损失函数）"><a href="#4-2-反向传播（训练阶段，计算损失函数）" class="headerlink" title="4.2 反向传播（训练阶段，计算损失函数）"></a><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">4.2 反向传播（训练阶段，计算损失函数）</font></h3><p>最终结果好不好关键就在于输出结果7<em>7</em>30里面的参数好不好，需要通过反向传播训练，计算损失函数（关键是我想让模型学到什么东西）</p>
+<p><strong>坐标损失，置信度损失，类别损失</strong></p>
+<!-- 这是一张图片，ocr 内容为： -->
+<p><img src="/img/loading.gif" data-original="https://cdn.nlark.com/yuque/0/2026/png/66153451/1776596933150-c1e9ec72-fe7c-497c-b591-c7fb7bdad481.png"></p>
+<h3 id="一、反向传播在干嘛（训练阶段）"><a href="#一、反向传播在干嘛（训练阶段）" class="headerlink" title="一、反向传播在干嘛（训练阶段）"></a><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">一、反向传播在干嘛（训练阶段）</font></h3><ol>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">网络前向算出 </font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">7×7×30</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);"> 预测值</font></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">用</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">损失函数</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">对比</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">预测值</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">和</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">真实标签</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">，算总误差</font></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">把误差</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">从后往前传</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">，更新卷积层、全连接层参数</font></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">反复迭代，让损失越来越小，输出越来越准</font></li>
+</ol>
+<p><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">核心目的：让 7×7×30 里的坐标、置信度、类别概率都贴近真实值。</font></strong></p>
+<hr>
+<h3 id="二、损失函数：你想让模型学什么"><a href="#二、损失函数：你想让模型学什么" class="headerlink" title="二、损失函数：你想让模型学什么"></a><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">二、损失函数：你想让模型学什么</font></h3><p><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">YOLOv1 让模型学 </font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">3 件事</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">，对应 3 部分损失：</font></p>
+<h4 id="1-学定位（坐标损失）"><a href="#1-学定位（坐标损失）" class="headerlink" title="1. 学定位（坐标损失）"></a><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">1. 学定位（坐标损失）</font></h4><ul>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">学：</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">x、y、w、h</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);"> 更准</font></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">只算</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">有物体的框</font></strong></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">宽高开根号再算误差，让小框更准</font></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">权重 </font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">λ_coord&#x3D;5</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">，重点学定位</font></li>
+</ul>
+<!-- 这是一张图片，ocr 内容为： -->
+<p><img src="/img/loading.gif" data-original="https://cdn.nlark.com/yuque/0/2026/png/66153451/1776419769490-f232fccc-8000-4fd2-b747-40a45b5eaf5f.png"></p>
+<h4 id="2-学有没有物体（置信度损失）"><a href="#2-学有没有物体（置信度损失）" class="headerlink" title="2. 学有没有物体（置信度损失）"></a><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">2. 学有没有物体（置信度损失）</font></h4><ul>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">学：框里</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">有没有目标</font></strong></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">有目标：让置信度靠近 </font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">IOU</font></strong></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">没目标：让置信度靠近 </font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">0</font></strong></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">无目标权重 </font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">λ_noobj&#x3D;0.5</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">，避免背景压倒前景</font></li>
+<li><!-- 这是一张图片，ocr 内容为： -->
+<img src="/img/loading.gif" data-original="https://cdn.nlark.com/yuque/0/2026/png/66153451/1776419849249-02a15a2f-7953-4c6b-8bd2-76c94f05f36a.png"></li>
+</ul>
+<h4 id="3-学是什么物体（类别损失）"><a href="#3-学是什么物体（类别损失）" class="headerlink" title="3. 学是什么物体（类别损失）"></a><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">3. 学是什么物体（类别损失）</font></h4><ul>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">学：grid cell 里的目标</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">属于哪一类</font></strong></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">只算</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">有物体的网格</font></strong></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">让 20 维类别概率贴近真实类别</font></li>
+</ul>
+<!-- 这是一张图片，ocr 内容为： -->
+<p><img src="/img/loading.gif" data-original="https://cdn.nlark.com/yuque/0/2026/png/66153451/1776419816078-e9a7be6b-3de3-477f-a928-f740a91ee435.png"></p>
+<hr>
+<h3 id="三、最精简记忆版"><a href="#三、最精简记忆版" class="headerlink" title="三、最精简记忆版"></a><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">三、最精简记忆版</font></h3><ul>
+<li><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">反向传播</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">：算损失 → 传误差 → 改参数</font></li>
+<li><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">损失函数</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">：</font><ol>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">框要准（坐标损失）</font></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">有没有东西要对（置信度损失）</font></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">是什么类别要对（类别损失）</font></li>
+</ol>
+</li>
+<li><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">最终目标</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">：把 7×7×30 练到</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">又准又稳</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">。</font></li>
+</ul>
+<hr>
+<h2 id="五、总结"><a href="#五、总结" class="headerlink" title="五、总结"></a><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">五、总结</font></h2><!-- 这是一张图片，ocr 内容为： -->
+<p><img src="/img/loading.gif" data-original="https://cdn.nlark.com/yuque/0/2026/png/66153451/1776419554395-2f6e45b2-15ae-4512-a5e4-cc2b5825b8d4.png"></p>
+<ul>
+<li>缺点</li>
+</ul>
+<ol>
+<li>虽然速度快，但是mAP比较低</li>
+<li>定位性能比较差</li>
+<li>recall比较低</li>
+<li>检测小目标和密集目标比较差</li>
+</ol>
+<h1 id="关键问题"><a href="#关键问题" class="headerlink" title="关键问题"></a>关键问题</h1><h2 id="问题一：卷积分类网络和yolov1的区别"><a href="#问题一：卷积分类网络和yolov1的区别" class="headerlink" title="问题一：卷积分类网络和yolov1的区别"></a>问题一：卷积分类网络和yolov1的区别</h2><p>目标检测模型和图像分类模型并没有太大区别</p>
+<!-- 这是一张图片，ocr 内容为： -->
+<p><img src="/img/loading.gif" data-original="https://cdn.nlark.com/yuque/0/2026/png/66153451/1776385914666-cfbc1b9e-21e9-4ca3-9383-adf0bc7147fa.png"></p>
+<table>
+<thead>
+<tr>
+<th align="left"><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">对比维度</font></strong></th>
+<th align="left"><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">普通卷积分类网络（CNN）</font></strong></th>
+<th align="left"><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">YOLOv1 目标检测网络</font></strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">输入</font></strong></td>
+<td align="left"><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">图像 </font><code>&lt;font style=&quot;color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);&quot;&gt;X&lt;/font&gt;</code></td>
+<td align="left"><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">图像 </font><code>&lt;font style=&quot;color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);&quot;&gt;X&lt;/font&gt;</code></td>
+</tr>
+<tr>
+<td align="left"><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">核心任务</font></strong></td>
+<td align="left"><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">只做</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">图像分类</font></strong></td>
+<td align="left"><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">同时做</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">目标定位 + 分类</font></strong></td>
+</tr>
+<tr>
+<td align="left"><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">输出内容</font></strong></td>
+<td align="left"><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">类别概率（一维向量，如 [猫：0.9, 狗：0.1]）</font></td>
+<td align="left"><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">7×7×30 张量，包含：</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">・目标位置 (x,y,w,h)</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">・置信度</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">・类别概率</font></td>
+</tr>
+<tr>
+<td align="left"><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">关键特点</font></strong></td>
+<td align="left"><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">只告诉你 “这张图里是什么”</font></td>
+<td align="left"><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">不仅告诉你 “是什么”，还告诉你 “在哪里”</font></td>
+</tr>
+</tbody></table>
+<h2 id="问题二：线性激活函数与非线性激活函数的区别"><a href="#问题二：线性激活函数与非线性激活函数的区别" class="headerlink" title="问题二：线性激活函数与非线性激活函数的区别"></a>问题二：线性激活函数与非线性激活函数的区别</h2><h3 id="总结一句话"><a href="#总结一句话" class="headerlink" title="总结一句话"></a>总结一句话</h3><ul>
+<li><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">线性激活函数</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">：输出和输入呈</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">直线关系</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">，</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">无法拟合复杂特征</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">，多层神经网络会退化成单层。</font></li>
+<li><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">非线性激活函数</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">：输出和输入</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">不是直线</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">，</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">能拟合任意复杂函数</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">，让深度网络真正 “深” 起来。</font></li>
+</ul>
+<h3 id="详细对比"><a href="#详细对比" class="headerlink" title="详细对比"></a><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">详细对比</font></h3><h4 id="1-定义与公式"><a href="#1-定义与公式" class="headerlink" title="1. 定义与公式"></a><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">1. 定义与公式</font></h4><ul>
+<li><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">线性激活函数</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">公式：</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">y &#x3D; x</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">（恒等映射）</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">输出与输入成正比，图像是一条直线。</font></li>
+<li><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">非线性激活函数</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">公式不是一次函数，图像是曲线。常见：</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">Sigmoid、ReLU、Leaky ReLU、Tanh</font></strong></li>
+</ul>
+<h4 id="2-拟合能力（最关键）"><a href="#2-拟合能力（最关键）" class="headerlink" title="2. 拟合能力（最关键）"></a><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">2. 拟合能力（最关键）</font></h4><ul>
+<li><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">线性</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">只能学习</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">线性关系</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">，无法处理复杂任务（分类、检测、识别全不行）。</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">无论叠加多少层，结果等价于</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">单层网络</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">，</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">深度失效</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">。</font></li>
+<li><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">非线性</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">可以拟合</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">任意复杂的非线性关系</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">（曲线、边界、特征）。多层叠加后，特征层层抽象，</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">深度学习才有意义</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">。</font></li>
+</ul>
+<h4 id="3-梯度特性"><a href="#3-梯度特性" class="headerlink" title="3. 梯度特性"></a><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">3. 梯度特性</font></h4><ul>
+<li><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">线性</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">梯度是</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">常数</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">，不会消失也不会爆炸，但</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">没用</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">，因为学不到复杂特征。</font></li>
+<li><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">非线性</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">梯度会变化，能让网络</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">有效学习</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">；部分会出现梯度消失（如 Sigmoid），所以现在多用</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">ReLU（但是他会出现神经元死亡）</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">。</font></li>
+</ul>
+<h4 id="4-用途"><a href="#4-用途" class="headerlink" title="4. 用途"></a><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">4. 用途</font></h4><ul>
+<li><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">线性激活函数</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">几乎</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">不用在隐藏层</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">，只用于</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">回归任务输出层</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">（如预测坐标、数值）。</font><ul>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">→ </font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">YOLOv1 最后一层就用线性激活！</font></strong></li>
+</ul>
+</li>
+<li><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">非线性激活函数所有隐藏层必须用</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">，否则网络等于白搭。</font><ul>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">→ YOLOv1 除最后一层外，全用 </font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">Leaky ReLU</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">。</font></li>
+</ul>
+</li>
+</ul>
+<h2 id="问题三：理解yolov1的输出结果"><a href="#问题三：理解yolov1的输出结果" class="headerlink" title="问题三：理解yolov1的输出结果 "></a><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">问题三：理解yolov1的输出结果 </font></h2><p><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">YOLOv1 里，每个网格预测的「2 个边界框」，共享同一组类别概率，而不是每个框单独预测类别。</font></strong></p>
+<hr>
+<h3 id="先回顾：一个网格输出的-30-维向量"><a href="#先回顾：一个网格输出的-30-维向量" class="headerlink" title="先回顾：一个网格输出的 30 维向量"></a><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">先回顾：一个网格输出的 30 维向量</font></h3><p><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">你已经知道，每个网格输出 30 维，结构是：</font></p>
+<ul>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">第 1-5 维：框 1 的参数 </font><code>&lt;font style=&quot;color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);&quot;&gt;(x1, y1, w1, h1, c1)&lt;/font&gt;</code></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">第 6-10 维：框 2 的参数 </font><code>&lt;font style=&quot;color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);&quot;&gt;(x2, y2, w2, h2, c2)&lt;/font&gt;</code></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">第 11-30 维：</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">一组 20 个类别的概率</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">（比如：是猫的概率、是狗的概率……）</font></li>
+</ul>
+<p><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">这里的关键是：</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">2 个框，共用这同一组 20 维的类别概率。</font></strong></p>
+<hr>
+<h3 id="举个例子"><a href="#举个例子" class="headerlink" title="举个例子"></a><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">举个例子</font></h3><p><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">假设一个网格里有一只狗：</font></p>
+<ol>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">这个网格预测了两个框：</font><ul>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">框 A：位置更准，置信度 </font><code>&lt;font style=&quot;color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);&quot;&gt;cA=0.8&lt;/font&gt;</code></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">框 B：位置不准，置信度 </font><code>&lt;font style=&quot;color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);&quot;&gt;cB=0.3&lt;/font&gt;</code></li>
+</ul>
+</li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">类别概率是共用的：</font><ul>
+<li><code>&lt;font style=&quot;color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);&quot;&gt;P(狗|物体中心在这个网格)=0.9&lt;/font&gt;</code></li>
+<li><code>&lt;font style=&quot;color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);&quot;&gt;P(猫|物体中心在这个网格)=0.05&lt;/font&gt;</code></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">其他类别概率都很低</font></li>
+</ul>
+</li>
+</ol>
+<p><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">计算最终得分时，是这样的：</font></p>
+<ul>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">框 A 的狗得分 &#x3D; </font><code>&lt;font style=&quot;color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);&quot;&gt;0.8 × 0.9 = 0.72&lt;/font&gt;</code></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">框 B 的狗得分 &#x3D; </font><code>&lt;font style=&quot;color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);&quot;&gt;0.3 × 0.9 = 0.27&lt;/font&gt;</code></li>
+</ul>
+<p><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">两个框都用同一组类别概率，只是乘以各自的置信度，算出自己的最终得分。</font></strong></p>
+<hr>
+<h3 id="为什么要这么设计？"><a href="#为什么要这么设计？" class="headerlink" title="为什么要这么设计？"></a><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">为什么要这么设计？</font></h3><ol>
+<li><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">减少计算量</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">如果每个框都单独预测 20 类概率，一个网格就需要 </font><code>&lt;font style=&quot;color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);&quot;&gt;5×2 + 20×2 = 50&lt;/font&gt;</code><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);"> 维，比现在的 30 维多了近一倍，计算量会变大。</font></li>
+<li><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">类别概率的本质</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">YOLOv1 的类别概率，是「物体中心落在这个网格时，属于某一类的概率」，它是</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">以网格为单位</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">的，不是以框为单位的。</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">同一个网格里的物体，类别是固定的，没必要让两个框分别预测类别。</font></li>
+</ol>
+<hr>
+<h3 id="一个关键误区纠正"><a href="#一个关键误区纠正" class="headerlink" title="一个关键误区纠正"></a><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">一个关键误区纠正</font></h3><p><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">很多人会以为：</font></p>
+<ul>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">框 1 预测猫，框 2 预测狗</font></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">或者两个框分别预测不同的类别</font></li>
+</ul>
+<p><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">但 YOLOv1 里不是这样的</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">，两个框只是位置 &#x2F; 大小不同，类别是同一个，它们只是竞争「谁的位置更准、置信度更高」，类别概率是共用的。</font></p>
+<h3 id="总结一句话-1"><a href="#总结一句话-1" class="headerlink" title="总结一句话"></a><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">总结一句话</font></h3><p><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">YOLOv1 中每个网格预测的两个边界框，共享同一组 20 类别的概率，类别概率以网格为单位计算，再与每个框的置信度相乘得到最终得分，以此减少计算量。</font></strong></p>
+<h2 id="问题-预测的时候评价是否预测准确的指标IOU"><a href="#问题-预测的时候评价是否预测准确的指标IOU" class="headerlink" title="问题:预测的时候评价是否预测准确的指标IOU"></a>问题:预测的时候评价是否预测准确的指标IOU</h2><p><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">IOU（Intersection over Union，交并比）是目标检测中</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">衡量两个框重叠程度的核心指标</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">，YOLO、Faster R-CNN 等所有检测算法都离不开它。</font></p>
+<hr>
+<h3 id="定义与公式"><a href="#定义与公式" class="headerlink" title="定义与公式"></a><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">定义与公式</font></h3><p><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">IOU 就是两个边界框的</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">交集面积</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">除以</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">并集面积</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">，公式：</font></p>
+<p><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">IOU(A,B)&#x3D;Area(A∩B)&#x2F;Area(A∪B)</font></p>
+<ul>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">A</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">：预测框（模型输出的框）</font></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">B</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">：真实框（Ground Truth，标注的框）</font></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">A</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">∩</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">B</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">：两个框重叠部分的面积</font></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">A</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">∪</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">B</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">：两个框覆盖的总面积</font></li>
+</ul>
+<!-- 这是一张图片，ocr 内容为： -->
+<p><img src="/img/loading.gif" data-original="https://cdn.nlark.com/yuque/0/2026/png/66153451/1776349667989-bf68057e-2e02-4081-8052-d41fd3f80d5d.png"></p>
+<hr>
+<h3 id="直观理解"><a href="#直观理解" class="headerlink" title="直观理解"></a><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">直观理解</font></h3><table>
+<thead>
+<tr>
+<th align="left"><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">场景</font></strong></th>
+<th align="left"><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">IOU 值</font></strong></th>
+<th align="left"><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">含义</font></strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">完全重合</font></td>
+<td align="left"><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">1.0</font></td>
+<td align="left"><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">预测框和真实框一模一样，完美预测</font></td>
+</tr>
+<tr>
+<td align="left"><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">部分重叠</font></td>
+<td align="left"><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">0~1 之间</font></td>
+<td align="left"><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">重叠越多，IOU 越大，预测越准</font></td>
+</tr>
+<tr>
+<td align="left"><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">完全不重叠</font></td>
+<td align="left"><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">0</font></td>
+<td align="left"><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">预测框和真实框没有交集，预测错误</font></td>
+</tr>
+</tbody></table>
+<hr>
+<h3 id="目标检测中的核心作用"><a href="#目标检测中的核心作用" class="headerlink" title="目标检测中的核心作用"></a><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">目标检测中的核心作用</font></h3><h4 id="1-评估检测结果是否正确"><a href="#1-评估检测结果是否正确" class="headerlink" title="1. 评估检测结果是否正确"></a><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">1. 评估检测结果是否正确</font></h4><ul>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">通常设定阈值（如 0.5）：</font><ul>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">IOU ≥ 0.5 → 视为</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">正样本（正确检测）</font></strong></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">IOU &lt; 0.5 → 视为</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">负样本（误检）</font></strong></li>
+</ul>
+</li>
+</ul>
+<h4 id="2-训练时判断正负样本（YOLOv1-中很关键）"><a href="#2-训练时判断正负样本（YOLOv1-中很关键）" class="headerlink" title="2. 训练时判断正负样本（YOLOv1 中很关键）"></a><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">2. 训练时判断正负样本（YOLOv1 中很关键）</font></h4><ul>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">每个网格预测的两个框，分别和真实框计算 IOU</font></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">IOU 更高的那个框，负责预测这个物体，参与损失计算</font></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">另一个框视为背景，不参与物体定位的损失计算</font></li>
+</ul>
+<h4 id="3-NMS（非极大值抑制）中去重"><a href="#3-NMS（非极大值抑制）中去重" class="headerlink" title="3. NMS（非极大值抑制）中去重"></a><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">3. NMS（非极大值抑制）中去重</font></h4><ul>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">同一个物体可能被多个框预测，NMS 会：</font><ol>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">按置信度排序，保留最高的框</font></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">与它 IOU 超过阈值（如 0.5）的框，直接删除</font></li>
+</ol>
+</li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">目的：避免重复检测同一个物体</font></li>
+</ul>
+<hr>
+<h4 id="YOLOv1-中-IOU-的特殊用法"><a href="#YOLOv1-中-IOU-的特殊用法" class="headerlink" title="YOLOv1 中 IOU 的特殊用法"></a><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">YOLOv1 中 IOU 的特殊用法</font></h4><p><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">YOLOv1 中置信度（confidence）的定义直接用到了 IOU：</font></p>
+<p><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">confidence</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">&#x3D;</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">Pr</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">(</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">Object</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">)</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">×</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">IOU</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">(</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">pred, truth</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">)</font></p>
+<ul>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">Pr</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">(</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">Object</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">)</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">：这个网格里是否有物体（有则为 1，无则为 0）</font></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">IOU</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">(</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">pred, truth</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">)</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">：预测框和真实框的交并比</font></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">所以置信度同时反映了「有没有物体」和「框准不准」两个信息</font></li>
+</ul>
+<hr>
+<h4 id="总结一句话-2"><a href="#总结一句话-2" class="headerlink" title="总结一句话"></a><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">总结一句话</font></h4><p><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">IOU（交并比）是预测框与真实框的交集面积除以并集面积，用于衡量框的重叠程度，是目标检测中评估检测精度、判断正负样本、实现 NMS 去重的核心指标。</font></strong></p>
+<h2 id="问题四：计算损失函数时候w-h为什么要开根号"><a href="#问题四：计算损失函数时候w-h为什么要开根号" class="headerlink" title="问题四：计算损失函数时候w&#x2F;h为什么要开根号"></a><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">问题四：计算损失函数时候w&#x2F;h为什么要开根号</font></h2><p>为了解决大小误差不平衡的问题</p>
+ <!-- 这是一张图片，ocr 内容为： -->
+<p><img src="/img/loading.gif" data-original="https://cdn.nlark.com/yuque/0/2026/png/66153451/1776409989895-88cab282-81e4-4b4c-9e46-877f147841e9.png"></p>
+<h3 id="1-直接用-w-h-会发生什么？"><a href="#1-直接用-w-h-会发生什么？" class="headerlink" title="1. 直接用 w&#x2F;h 会发生什么？"></a><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">1. 直接用 w&#x2F;h 会发生什么？</font></h3><p><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">假设用普通的均方误差（MSE）计算宽高损失：</font></p>
+<!-- 这是一张图片，ocr 内容为： -->
+<p><img src="/img/loading.gif" data-original="https://cdn.nlark.com/yuque/0/2026/png/66153451/1776409972203-5580fa3d-e4cd-4ff1-94cc-fa781bc37f13.png"></p>
+<p><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">我们举两个例子：</font></p>
+<ul>
+<li><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">小物体</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">：真实宽 </font><code>&lt;font style=&quot;color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);&quot;&gt;w=0.1&lt;/font&gt;</code><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">，预测宽 </font><code>&lt;font style=&quot;color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);&quot;&gt;ŵ=0.2&lt;/font&gt;</code><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">误差：</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">(</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">0.1</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">−</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">0.2</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">)</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">2</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">&#x3D;</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">0.01</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">相对误差：100%（误差是真实值的 1 倍）</font></li>
+<li><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">大物体</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">：真实宽 </font><code>&lt;font style=&quot;color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);&quot;&gt;w=0.9&lt;/font&gt;</code><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">，预测宽 </font><code>&lt;font style=&quot;color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);&quot;&gt;ŵ=1.0&lt;/font&gt;</code><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">误差：</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">(</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">0.9</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">−</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">1.0</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">)</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">2</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">&#x3D;</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">0.01</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">相对误差：11%（误差是真实值的 1&#x2F;9）</font></li>
+</ul>
+<p><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">你会发现：</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">两个误差的数值完全一样，但对小物体来说，这个误差的破坏性要大得多！</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">MSE 会给它们一样的惩罚，模型就会更关注大物体的误差，小物体的误差就被忽略了，导致小目标检测效果很差。</font></p>
+<h3 id="2-解决办法：对-w-h-开根号"><a href="#2-解决办法：对-w-h-开根号" class="headerlink" title="2. 解决办法：对 w&#x2F;h 开根号"></a><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">2. 解决办法：对 w&#x2F;h 开根号</font></h3><p><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">YOLOv1 改成了：</font></p>
+<!-- 这是一张图片，ocr 内容为： -->
+<p><img src="/img/loading.gif" data-original="https://cdn.nlark.com/yuque/0/2026/png/66153451/1776410008185-fc642aa7-3ee6-45c7-a9fa-669ea00b2a77.png"></p>
+<p><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">再用刚才的例子算一遍：</font></p>
+<ul>
+<li><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">小物体</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">：真实 </font><code>&lt;font style=&quot;color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);&quot;&gt;√0.1 ≈ 0.316&lt;/font&gt;</code><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">，预测 </font><code>&lt;font style=&quot;color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);&quot;&gt;√0.2 ≈ 0.447&lt;/font&gt;</code><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">误差：</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">(</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">0.316</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">−</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">0.447</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">)</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">2</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">≈</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">0.017</font></li>
+<li><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">大物体</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">：真实 </font><code>&lt;font style=&quot;color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);&quot;&gt;√0.9 ≈ 0.949&lt;/font&gt;</code><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">，预测 </font><code>&lt;font style=&quot;color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);&quot;&gt;√1.0 = 1.0&lt;/font&gt;</code><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">误差：</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">(</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">0.949</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">−</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">1.0</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">)</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">2</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">≈</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">0.0026</font></li>
+</ul>
+<p><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">现在：</font></p>
+<ul>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">同样的绝对误差，</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">小物体的损失值比大物体高了近 7 倍</font></strong></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">模型会更重视小物体的误差，给它们更大的梯度更新，解决了大小物体 “待遇不平等” 的问题。</font></li>
+</ul>
+<h3 id="3-为什么开根号能做到？"><a href="#3-为什么开根号能做到？" class="headerlink" title="3. 为什么开根号能做到？"></a><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">3. 为什么开根号能做到？</font></h3><p><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">因为 </font><code>&lt;font style=&quot;color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);&quot;&gt;y=√x&lt;/font&gt;</code><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);"> 这个函数的特性：</font></p>
+<ul>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">当 </font><code>&lt;font style=&quot;color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);&quot;&gt;x&lt;/font&gt;</code><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);"> 很小时（小物体），函数的</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">斜率很大</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">，同样的误差会被放大，损失值变大，模型会更敏感。</font></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">当 </font><code>&lt;font style=&quot;color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);&quot;&gt;x&lt;/font&gt;</code><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);"> 很大时（大物体），函数的</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">斜率很小</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">，同样的误差影响被缩小，损失值变小，避免模型被大物体的误差带偏。</font></li>
+</ul>
+<p><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">一句话总结：</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">开根号 &#x3D; 给小物体的误差 “加权重”，给大物体的误差 “降权重”，让模型公平对待大小目标。</font></strong></p>
+<h3 id="补充：这个设计的局限性"><a href="#补充：这个设计的局限性" class="headerlink" title="补充：这个设计的局限性"></a><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">补充：这个设计的局限性</font></h3><p><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">虽然开根号缓解了问题，但它只是一个 “近似优化”。后续的 YOLOv2&#x2F;v3 引入了 anchor、CIoU 等更复杂的损失函数，才从根本上解决了这个问题。但在 YOLOv1 那个时代，这个开根号的设计已经非常超前了。</font></p>
+<h2 id="问题五：怎么预测-w-h-x-y"><a href="#问题五：怎么预测-w-h-x-y" class="headerlink" title="问题五：怎么预测(w,h,x,y)"></a><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">问题五：怎么预测(w,h,x,y)</font></h2><!-- 这是一张图片，ocr 内容为： -->
+<p><img src="/img/loading.gif" data-original="https://cdn.nlark.com/yuque/0/2026/png/66153451/1776607319369-58d24ace-1294-49f5-b480-58607f843abf.png"></p>
+<h3 id="1-YOLOv1-整体前提"><a href="#1-YOLOv1-整体前提" class="headerlink" title="1.YOLOv1 整体前提"></a><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">1.YOLOv1 整体前提</font></h3><ul>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">无 Anchor 锚框</font></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">图片逻辑上划分为 </font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">7×7 网格</font></strong></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">每个网格预测 </font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">2 个边界框</font></strong></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">每个框输出 4 个坐标：</font><!-- 这是一张图片，ocr 内容为： --><br><img src="/img/loading.gif" data-original="https://cdn.nlark.com/yuque/0/2026/png/66153451/1776607823540-ced3e313-b937-4824-8b74-dd324751acc4.png"></li>
+</ul>
+<h3 id="2-x-y-预测"><a href="#2-x-y-预测" class="headerlink" title="2.x,y 预测"></a><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">2.</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">x,y</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);"> 预测</font></h3><p><font style="color:#1DC0C9;">归一化和反归一化的过程</font></p>
+<p><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">网络输出 </font><!-- 这是一张图片，ocr 内容为： --><br><img src="/img/loading.gif" data-original="https://cdn.nlark.com/yuque/0/2026/png/66153451/1776607815497-290916be-c10f-4de3-a1c4-fa4a3669999a.png"></p>
+<!-- 这是一张图片，ocr 内容为： -->
+<p><img src="/img/loading.gif" data-original="https://cdn.nlark.com/yuque/0/2026/png/66153451/1776607758401-bab2683a-83da-48ea-86bc-5cba6967723a.png"></p>
+<ul>
+<li><!-- 这是一张图片，ocr 内容为： -->
+<img src="/img/loading.gif" data-original="https://cdn.nlark.com/yuque/0/2026/png/66153451/1776607767035-e83d8507-e03d-45f9-a0ae-35dba91235a9.png"><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">：网格自身的</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">列、行编号</font></strong></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">σ</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);"> &#x3D; sigmoid，把值压到 </font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">0~1</font></strong></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">含义：物体中心</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">在格子内部的相对位置</font></strong></li>
+</ul>
+<h3 id="3-w-h预测"><a href="#3-w-h预测" class="headerlink" title="3. w,h预测"></a><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">3. </font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">w,h</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">预测</font></h3><p><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">YOLOv1 不相对于网格、不相对于 anchor，直接预测相对于</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">整张图片</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">的宽高开根号！</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">网络输出 </font><!-- 这是一张图片，ocr 内容为： --><br><img src="/img/loading.gif" data-original="https://cdn.nlark.com/yuque/0/2026/png/66153451/1776607904630-81b7aad5-e03d-4300-87a2-7710e8d73b7f.png"><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">，公式：</font></p>
+<!-- 这是一张图片，ocr 内容为： -->
+<p><img src="/img/loading.gif" data-original="https://cdn.nlark.com/yuque/0/2026/png/66153451/1776607863289-145768b5-9c11-48ab-a075-a84cc6902383.png"></p>
+<ul>
+<li><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">网络输出的 </font></strong><!-- 这是一张图片，ocr 内容为： --><br><img src="/img/loading.gif" data-original="https://cdn.nlark.com/yuque/0/2026/png/66153451/1776607912035-c14fa78b-521c-4e91-9929-65af60e22436.png"><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">是模型直接回归的数值，</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">没有激活函数（没有 sigmoid）</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">数值范围一般 </font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">0∼7</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);"> 左右</font></li>
+<li><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">为什么要平方？</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">真实框的宽高 </font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">w,h</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);"> 是</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">相对于整张图片归一化</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">的（范围 </font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">0∼1</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">）直接回归 </font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">w,h</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);"> 会出现：</font><ul>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">小目标权重太小，损失不敏感</font></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">大目标误差被放大，训练不稳定所以 YOLOv1 </font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">先回归开根号后的值</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">，最后再平方还原：</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">网络预测：</font><!-- 这是一张图片，ocr 内容为： --><br>  <img src="/img/loading.gif" data-original="https://cdn.nlark.com/yuque/0/2026/png/66153451/1776607986159-76ef8eb4-6a6b-43dc-95ea-1f4287048cdc.png"><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);"> </font></li>
+</ul>
+</li>
+</ul>
+<p><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">w, h还原： </font><!-- 这是一张图片，ocr 内容为： --><br><img src="/img/loading.gif" data-original="https://cdn.nlark.com/yuque/0/2026/png/66153451/1776608013956-94ddf645-a768-493a-a669-bbc0aa872b49.png"></p>
+<p><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">作用</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">：缩小大框、放大小框，</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">平衡大小目标的损失权重</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">，提升小目标精度。</font></p>
+<ul>
+<li><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">x、y</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">：</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">相对于网格</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">，sigmoid 限制在格子内</font></li>
+<li><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">w、h</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">：</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">相对于整张图片</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">，直接回归开根号，再平方，</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">无 sigmoid</font></strong></li>
+</ul>
+<h3 id="3-总的来说"><a href="#3-总的来说" class="headerlink" title=" 3.总的来说"></a><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);"> 3.总的来说</font></h3><ol>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">将输入图像划分为 </font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">7</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">×</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">7</font><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);"> 网格，物体中心所在网格负责预测边界框。</font></li>
+<li><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">中心点坐标 x,y</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">：网络预测 </font><!-- 这是一张图片，ocr 内容为： --><br><img src="/img/loading.gif" data-original="https://cdn.nlark.com/yuque/0/2026/png/66153451/1776608144094-44780761-e375-4639-9191-042f3061a4cd.png"><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">，经 </font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">sigmoid</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);"> 映射到 0∼1，叠加网格坐标，得到相对整张图的中心点。</font></li>
+<li><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">宽高 </font><strong><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">w</font></strong></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">,</font>****<font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">h</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">：网络直接预测宽高的</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">平方根</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">，</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">不使用 sigmoid</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">，最后通过</font><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">平方运算</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">还原得到真实宽高。</font></li>
+<li><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">采用平方操作目的：平衡大小目标的损失权重，缓解大目标损失占比过大问题。</font></li>
+<li><strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">无 Anchor 先验框</font></strong><font style="color:rgb(0, 0, 0);background-color:rgba(0, 0, 0, 0);">，直接回归边界框全部坐标。</font></li>
+</ol>
+<h1 id="经验总结"><a href="#经验总结" class="headerlink" title="经验总结"></a>经验总结</h1><h2 id="可能会下采样"><a href="#可能会下采样" class="headerlink" title="可能会下采样"></a>可能会下采样</h2><p>下采样就是降低分辨率，比如从224<em>224降低到112</em>112</p>
+<ul>
+<li>s-2</li>
+<li>池化（最大池化和平均池化）</li>
+</ul>
+<!-- 这是一张图片，ocr 内容为： -->
+<p><img src="/img/loading.gif" data-original="https://cdn.nlark.com/yuque/0/2026/png/66153451/1776421199841-6173ef33-996c-48fe-87ae-99be59bda97b.png"></p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="http://example.com">XiaoYing</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="http://example.com/2026/05/07/yolov1/">http://example.com/2026/05/07/yolov1/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="http://example.com" target="_blank">XiaoYing-Blog🐈</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><a class="post-meta__tags" href="/tags/YOLO/">YOLO</a><a class="post-meta__tags" href="/tags/%E7%9B%AE%E6%A0%87%E6%A3%80%E6%B5%8B/">目标检测</a></div><div class="post-share"><div class="social-share" data-image="https://picsum.photos/seed/yolo/800/400" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/2026/05/08/cnn%E5%8D%B7%E7%A7%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C%E7%AE%97%E6%B3%95%E5%8E%9F%E7%90%86/" title="CNN卷积神经网络全面总结"><img class="cover" src="/img/loading.gif" data-original="https://picsum.photos/seed/cnnnet/800/400" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">CNN卷积神经网络全面总结</div></div><div class="info-2"><div class="info-item-1">一、总结本文围绕卷积神经网络（CNN） 展开，先讲解全连接神经网络的结构、激活函数（Sigmoid&#x2F;Tanh&#x2F;ReLU&#x2F;Leaky ReLU）、前向传播、损失函数、梯度下降与反向传播的完整计算流程，再指出全连接网络处理图像的缺陷，进而介绍卷积运算、填充、步幅、多通道卷积、池化层的核心原理与尺寸计算公式，最终梳理出CNN 标准结构：输入层→卷积层→池化层→全连接层→输出层。  二、思维导图   三、详细总结3.1 全连接神经网络基础3.1.1整体结构与单元 结构：输入层→隐藏层→输出层，层间神经元（ 从基础单元到整体结构 ）全连接 神经元数学表达式：a&#x3D;h(w*x+b) 【对输入做线性变换 + 非线性激活，是所有层的基础。 】  激活函数作用：打破线性组合，让网络可拟合复杂规律     3.1.2常用激活函数对比（图+公式+导数）【神经网络非线性的关键】加入激活函数的原因：若是考虑把线性函数ℎ(𝑥) &#x3D; 𝑐𝑥作为激活函数，把𝑦(𝑥) &#x3D; ℎ(ℎ(ℎ(𝑥)))的运算对应3层神经网络，这个运算会进行𝑦(𝑥) &...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2026/05/08/cnn%E5%8D%B7%E7%A7%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C%E7%AE%97%E6%B3%95%E5%8E%9F%E7%90%86/" title="CNN卷积神经网络全面总结"><img class="cover" src="/img/loading.gif" data-original="https://picsum.photos/seed/cnnnet/800/400" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-05-08</div><div class="info-item-2">CNN卷积神经网络全面总结</div></div><div class="info-2"><div class="info-item-1">一、总结本文围绕卷积神经网络（CNN） 展开，先讲解全连接神经网络的结构、激活函数（Sigmoid&#x2F;Tanh&#x2F;ReLU&#x2F;Leaky ReLU）、前向传播、损失函数、梯度下降与反向传播的完整计算流程，再指出全连接网络处理图像的缺陷，进而介绍卷积运算、填充、步幅、多通道卷积、池化层的核心原理与尺寸计算公式，最终梳理出CNN 标准结构：输入层→卷积层→池化层→全连接层→输出层。  二、思维导图   三、详细总结3.1 全连接神经网络基础3.1.1整体结构与单元 结构：输入层→隐藏层→输出层，层间神经元（ 从基础单元到整体结构 ）全连接 神经元数学表达式：a&#x3D;h(w*x+b) 【对输入做线性变换 + 非线性激活，是所有层的基础。 】  激活函数作用：打破线性组合，让网络可拟合复杂规律     3.1.2常用激活函数对比（图+公式+导数）【神经网络非线性的关键】加入激活函数的原因：若是考虑把线性函数ℎ(𝑥) &#x3D; 𝑐𝑥作为激活函数，把𝑦(𝑥) &#x3D; ℎ(ℎ(ℎ(𝑥)))的运算对应3层神经网络，这个运算会进行𝑦(𝑥) &...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/loading.gif" data-original="/img/icon.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">XiaoYing</div><div class="author-info-description">我们唯一不变的就是改变</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">23</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">37</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">2</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/XiaoYing-Blog"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/XiaoYing-Blog" target="_blank" title="GitHub"><i class="fab fa-github" style="color: #24292e;"></i></a><a class="social-icon" href="mailto:3442601927@qq.com" target="_blank" title="邮箱"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81YOLOv1-%E5%9F%BA%E7%A1%80%E8%83%8C%E6%99%AF"><span class="toc-number">1.</span> <span class="toc-text">一、YOLOv1 基础背景</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81YOLOv1-%E7%BD%91%E7%BB%9C%E7%BB%93%E6%9E%84"><span class="toc-number">2.</span> <span class="toc-text">二、YOLOv1 网络结构</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E8%BE%93%E5%85%A5"><span class="toc-number">2.1.</span> <span class="toc-text">1. 输入</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E6%95%B4%E4%BD%93%E6%B5%81%E7%A8%8B"><span class="toc-number">2.2.</span> <span class="toc-text">2. 整体流程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E6%BF%80%E6%B4%BB%E5%87%BD%E6%95%B0%E8%A7%84%E5%88%99"><span class="toc-number">2.3.</span> <span class="toc-text">3. 激活函数规则</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-%E8%AE%AD%E7%BB%83%E9%98%B2%E6%AD%A2%E8%BF%87%E6%8B%9F%E5%90%88"><span class="toc-number">2.4.</span> <span class="toc-text">4. 训练防止过拟合</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-%E4%B8%A4%E9%98%B6%E6%AE%B5%E8%AE%AD%E7%BB%83%E7%AD%96%E7%95%A5"><span class="toc-number">2.5.</span> <span class="toc-text">5.两阶段训练策略</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E9%A2%84%E6%B5%8B%E9%98%B6%E6%AE%B5%EF%BC%9Ayolo%E6%A8%A1%E5%9E%8B%E6%AD%A3%E5%90%91%E6%8E%A8%E6%96%AD%EF%BC%88%E6%B5%8B%E8%AF%95%E8%BF%87%E7%A8%8B%EF%BC%89"><span class="toc-number">3.</span> <span class="toc-text">三、预测阶段：yolo模型正向推断（测试过程）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-YOLOv1%E8%BE%93%E5%87%BA%E7%BB%93%E6%9E%9C"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 YOLOv1输出结果</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-%E5%A4%A7%E8%87%B4%E7%BB%93%E6%9E%9C%E8%A7%A3%E6%9E%90%EF%BC%887730%E6%9C%80%E4%B8%BA%E5%85%B3%E9%94%AE%EF%BC%8C%E6%98%AF%E5%8C%BA%E5%88%86%E4%B8%8E%E6%99%AE%E9%80%9A%E5%8D%B7%E7%A7%AF%E5%88%86%E7%B1%BB%E7%BD%91%E7%BB%9C%E7%9A%84%E5%85%B3%E9%94%AE%EF%BC%89"><span class="toc-number">3.1.1.</span> <span class="toc-text">1.大致结果解析（7730最为关键，是区分与普通卷积分类网络的关键）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-%EF%BC%88x-y-w-h%EF%BC%89"><span class="toc-number">3.1.2.</span> <span class="toc-text">2.（x,y,w,h）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-%E7%BD%AE%E4%BF%A1%E5%BA%A6%E4%B9%8Biou"><span class="toc-number">3.1.3.</span> <span class="toc-text">3.置信度之iou</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4-%E7%BD%AE%E4%BF%A1%E5%BA%A6"><span class="toc-number">3.1.4.</span> <span class="toc-text">4.置信度</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#5-%E6%A6%82%E7%8E%87%E6%95%B0%E5%80%BC"><span class="toc-number">3.1.5.</span> <span class="toc-text">5.概率数值</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-YOLOv1%E5%90%8E%E5%A4%84%E7%90%86%E6%B5%81%E7%A8%8B"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 YOLOv1后处理流程</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-%E7%BD%AE%E4%BF%A1%E5%BA%A6%E9%98%88%E5%80%BC%E8%BF%87%E6%BB%A4"><span class="toc-number">3.2.1.</span> <span class="toc-text">1.置信度阈值过滤</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-NMS%E9%9D%9E%E6%9E%81%E5%A4%A7%E5%80%BC%E6%8A%91%E5%88%B6"><span class="toc-number">3.2.2.</span> <span class="toc-text">2.NMS非极大值抑制</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E8%AE%AD%E7%BB%83%E9%98%B6%E6%AE%B5%EF%BC%88%E5%8F%8D%E5%90%91%E4%BC%A0%E6%92%AD%EF%BC%89"><span class="toc-number">4.</span> <span class="toc-text">四、训练阶段（反向传播）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-%E6%83%B3%E8%A6%81%E8%BE%BE%E5%88%B0%E7%9A%84%E6%95%88%E6%9E%9C"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 想要达到的效果</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-%E6%9C%89ground-truth%E4%B8%AD%E5%BF%83%E7%82%B9%E8%90%BD%E5%9C%A8%E7%9A%84grid-cell%EF%BC%9Atruthbox%E5%BA%94%E8%AF%A5%E7%94%B1%E5%85%B6%E4%B8%AD%E5%BF%83%E7%82%B9%E6%89%80%E5%9C%A8%E4%BD%8D%E7%BD%AE%E7%9A%84%E7%BD%91%E6%A0%BC%E7%9A%84%E4%B8%A4%E4%B8%AA%E6%A1%86%E8%BF%9B%E8%A1%8C%E6%8B%9F%E5%90%88%EF%BC%9B%E5%90%8C%E6%97%B6%E8%AF%A5%E7%BD%91%E6%A0%BC%E6%89%80%E8%A1%A8%E7%8E%B0%E7%9A%84%E7%B1%BB%E5%88%AB%EF%BC%8C%E4%B9%9F%E5%BE%97%E6%98%AF%E7%9C%9F%E5%AE%9E%E6%A1%86%E7%9A%84%E7%B1%BB%E5%88%AB"><span class="toc-number">4.1.1.</span> <span class="toc-text">1.有ground truth中心点落在的grid cell：truthbox应该由其中心点所在位置的网格的两个框进行拟合；同时该网格所表现的类别，也得是真实框的类别</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-%E6%B2%A1%E6%9C%89ground-truth%E4%B8%AD%E5%BF%83%E7%82%B9%E8%90%BD%E5%9C%A8%E7%9A%84grid-cell%E9%87%8C%E9%9D%A2%EF%BC%8C%E5%B0%B1%E4%BD%BF%E5%BE%97%E8%AF%A5grid-cell%E7%9A%84%E4%B8%A4%E4%B8%AA%E9%A2%84%E6%B5%8B%E6%A1%86%E8%B6%8A%E5%B0%8F%E8%B6%8A%E5%A5%BD"><span class="toc-number">4.1.2.</span> <span class="toc-text">2.没有ground truth中心点落在的grid cell里面，就使得该grid cell的两个预测框越小越好</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-%E5%8F%8D%E5%90%91%E4%BC%A0%E6%92%AD%EF%BC%88%E8%AE%AD%E7%BB%83%E9%98%B6%E6%AE%B5%EF%BC%8C%E8%AE%A1%E7%AE%97%E6%8D%9F%E5%A4%B1%E5%87%BD%E6%95%B0%EF%BC%89"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 反向传播（训练阶段，计算损失函数）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E5%8F%8D%E5%90%91%E4%BC%A0%E6%92%AD%E5%9C%A8%E5%B9%B2%E5%98%9B%EF%BC%88%E8%AE%AD%E7%BB%83%E9%98%B6%E6%AE%B5%EF%BC%89"><span class="toc-number">4.3.</span> <span class="toc-text">一、反向传播在干嘛（训练阶段）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E6%8D%9F%E5%A4%B1%E5%87%BD%E6%95%B0%EF%BC%9A%E4%BD%A0%E6%83%B3%E8%AE%A9%E6%A8%A1%E5%9E%8B%E5%AD%A6%E4%BB%80%E4%B9%88"><span class="toc-number">4.4.</span> <span class="toc-text">二、损失函数：你想让模型学什么</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-%E5%AD%A6%E5%AE%9A%E4%BD%8D%EF%BC%88%E5%9D%90%E6%A0%87%E6%8D%9F%E5%A4%B1%EF%BC%89"><span class="toc-number">4.4.1.</span> <span class="toc-text">1. 学定位（坐标损失）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-%E5%AD%A6%E6%9C%89%E6%B2%A1%E6%9C%89%E7%89%A9%E4%BD%93%EF%BC%88%E7%BD%AE%E4%BF%A1%E5%BA%A6%E6%8D%9F%E5%A4%B1%EF%BC%89"><span class="toc-number">4.4.2.</span> <span class="toc-text">2. 学有没有物体（置信度损失）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-%E5%AD%A6%E6%98%AF%E4%BB%80%E4%B9%88%E7%89%A9%E4%BD%93%EF%BC%88%E7%B1%BB%E5%88%AB%E6%8D%9F%E5%A4%B1%EF%BC%89"><span class="toc-number">4.4.3.</span> <span class="toc-text">3. 学是什么物体（类别损失）</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E6%9C%80%E7%B2%BE%E7%AE%80%E8%AE%B0%E5%BF%86%E7%89%88"><span class="toc-number">4.5.</span> <span class="toc-text">三、最精简记忆版</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E6%80%BB%E7%BB%93"><span class="toc-number">5.</span> <span class="toc-text">五、总结</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%85%B3%E9%94%AE%E9%97%AE%E9%A2%98"><span class="toc-number">6.</span> <span class="toc-text">关键问题</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%97%AE%E9%A2%98%E4%B8%80%EF%BC%9A%E5%8D%B7%E7%A7%AF%E5%88%86%E7%B1%BB%E7%BD%91%E7%BB%9C%E5%92%8Cyolov1%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="toc-number">6.1.</span> <span class="toc-text">问题一：卷积分类网络和yolov1的区别</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%97%AE%E9%A2%98%E4%BA%8C%EF%BC%9A%E7%BA%BF%E6%80%A7%E6%BF%80%E6%B4%BB%E5%87%BD%E6%95%B0%E4%B8%8E%E9%9D%9E%E7%BA%BF%E6%80%A7%E6%BF%80%E6%B4%BB%E5%87%BD%E6%95%B0%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="toc-number">6.2.</span> <span class="toc-text">问题二：线性激活函数与非线性激活函数的区别</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%80%BB%E7%BB%93%E4%B8%80%E5%8F%A5%E8%AF%9D"><span class="toc-number">6.2.1.</span> <span class="toc-text">总结一句话</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%AF%A6%E7%BB%86%E5%AF%B9%E6%AF%94"><span class="toc-number">6.2.2.</span> <span class="toc-text">详细对比</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-%E5%AE%9A%E4%B9%89%E4%B8%8E%E5%85%AC%E5%BC%8F"><span class="toc-number">6.2.2.1.</span> <span class="toc-text">1. 定义与公式</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-%E6%8B%9F%E5%90%88%E8%83%BD%E5%8A%9B%EF%BC%88%E6%9C%80%E5%85%B3%E9%94%AE%EF%BC%89"><span class="toc-number">6.2.2.2.</span> <span class="toc-text">2. 拟合能力（最关键）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-%E6%A2%AF%E5%BA%A6%E7%89%B9%E6%80%A7"><span class="toc-number">6.2.2.3.</span> <span class="toc-text">3. 梯度特性</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#4-%E7%94%A8%E9%80%94"><span class="toc-number">6.2.2.4.</span> <span class="toc-text">4. 用途</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%97%AE%E9%A2%98%E4%B8%89%EF%BC%9A%E7%90%86%E8%A7%A3yolov1%E7%9A%84%E8%BE%93%E5%87%BA%E7%BB%93%E6%9E%9C"><span class="toc-number">6.3.</span> <span class="toc-text">问题三：理解yolov1的输出结果 </span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%85%88%E5%9B%9E%E9%A1%BE%EF%BC%9A%E4%B8%80%E4%B8%AA%E7%BD%91%E6%A0%BC%E8%BE%93%E5%87%BA%E7%9A%84-30-%E7%BB%B4%E5%90%91%E9%87%8F"><span class="toc-number">6.3.1.</span> <span class="toc-text">先回顾：一个网格输出的 30 维向量</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%BE%E4%B8%AA%E4%BE%8B%E5%AD%90"><span class="toc-number">6.3.2.</span> <span class="toc-text">举个例子</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E8%BF%99%E4%B9%88%E8%AE%BE%E8%AE%A1%EF%BC%9F"><span class="toc-number">6.3.3.</span> <span class="toc-text">为什么要这么设计？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%80%E4%B8%AA%E5%85%B3%E9%94%AE%E8%AF%AF%E5%8C%BA%E7%BA%A0%E6%AD%A3"><span class="toc-number">6.3.4.</span> <span class="toc-text">一个关键误区纠正</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%80%BB%E7%BB%93%E4%B8%80%E5%8F%A5%E8%AF%9D-1"><span class="toc-number">6.3.5.</span> <span class="toc-text">总结一句话</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%97%AE%E9%A2%98-%E9%A2%84%E6%B5%8B%E7%9A%84%E6%97%B6%E5%80%99%E8%AF%84%E4%BB%B7%E6%98%AF%E5%90%A6%E9%A2%84%E6%B5%8B%E5%87%86%E7%A1%AE%E7%9A%84%E6%8C%87%E6%A0%87IOU"><span class="toc-number">6.4.</span> <span class="toc-text">问题:预测的时候评价是否预测准确的指标IOU</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%9A%E4%B9%89%E4%B8%8E%E5%85%AC%E5%BC%8F"><span class="toc-number">6.4.1.</span> <span class="toc-text">定义与公式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%9B%B4%E8%A7%82%E7%90%86%E8%A7%A3"><span class="toc-number">6.4.2.</span> <span class="toc-text">直观理解</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%9B%AE%E6%A0%87%E6%A3%80%E6%B5%8B%E4%B8%AD%E7%9A%84%E6%A0%B8%E5%BF%83%E4%BD%9C%E7%94%A8"><span class="toc-number">6.4.3.</span> <span class="toc-text">目标检测中的核心作用</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-%E8%AF%84%E4%BC%B0%E6%A3%80%E6%B5%8B%E7%BB%93%E6%9E%9C%E6%98%AF%E5%90%A6%E6%AD%A3%E7%A1%AE"><span class="toc-number">6.4.3.1.</span> <span class="toc-text">1. 评估检测结果是否正确</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-%E8%AE%AD%E7%BB%83%E6%97%B6%E5%88%A4%E6%96%AD%E6%AD%A3%E8%B4%9F%E6%A0%B7%E6%9C%AC%EF%BC%88YOLOv1-%E4%B8%AD%E5%BE%88%E5%85%B3%E9%94%AE%EF%BC%89"><span class="toc-number">6.4.3.2.</span> <span class="toc-text">2. 训练时判断正负样本（YOLOv1 中很关键）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-NMS%EF%BC%88%E9%9D%9E%E6%9E%81%E5%A4%A7%E5%80%BC%E6%8A%91%E5%88%B6%EF%BC%89%E4%B8%AD%E5%8E%BB%E9%87%8D"><span class="toc-number">6.4.3.3.</span> <span class="toc-text">3. NMS（非极大值抑制）中去重</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#YOLOv1-%E4%B8%AD-IOU-%E7%9A%84%E7%89%B9%E6%AE%8A%E7%94%A8%E6%B3%95"><span class="toc-number">6.4.3.4.</span> <span class="toc-text">YOLOv1 中 IOU 的特殊用法</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%80%BB%E7%BB%93%E4%B8%80%E5%8F%A5%E8%AF%9D-2"><span class="toc-number">6.4.3.5.</span> <span class="toc-text">总结一句话</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%97%AE%E9%A2%98%E5%9B%9B%EF%BC%9A%E8%AE%A1%E7%AE%97%E6%8D%9F%E5%A4%B1%E5%87%BD%E6%95%B0%E6%97%B6%E5%80%99w-h%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E5%BC%80%E6%A0%B9%E5%8F%B7"><span class="toc-number">6.5.</span> <span class="toc-text">问题四：计算损失函数时候w&#x2F;h为什么要开根号</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E7%9B%B4%E6%8E%A5%E7%94%A8-w-h-%E4%BC%9A%E5%8F%91%E7%94%9F%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="toc-number">6.5.1.</span> <span class="toc-text">1. 直接用 w&#x2F;h 会发生什么？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E8%A7%A3%E5%86%B3%E5%8A%9E%E6%B3%95%EF%BC%9A%E5%AF%B9-w-h-%E5%BC%80%E6%A0%B9%E5%8F%B7"><span class="toc-number">6.5.2.</span> <span class="toc-text">2. 解决办法：对 w&#x2F;h 开根号</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BC%80%E6%A0%B9%E5%8F%B7%E8%83%BD%E5%81%9A%E5%88%B0%EF%BC%9F"><span class="toc-number">6.5.3.</span> <span class="toc-text">3. 为什么开根号能做到？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%A1%A5%E5%85%85%EF%BC%9A%E8%BF%99%E4%B8%AA%E8%AE%BE%E8%AE%A1%E7%9A%84%E5%B1%80%E9%99%90%E6%80%A7"><span class="toc-number">6.5.4.</span> <span class="toc-text">补充：这个设计的局限性</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%97%AE%E9%A2%98%E4%BA%94%EF%BC%9A%E6%80%8E%E4%B9%88%E9%A2%84%E6%B5%8B-w-h-x-y"><span class="toc-number">6.6.</span> <span class="toc-text">问题五：怎么预测(w,h,x,y)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-YOLOv1-%E6%95%B4%E4%BD%93%E5%89%8D%E6%8F%90"><span class="toc-number">6.6.1.</span> <span class="toc-text">1.YOLOv1 整体前提</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-x-y-%E9%A2%84%E6%B5%8B"><span class="toc-number">6.6.2.</span> <span class="toc-text">2.x,y 预测</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-w-h%E9%A2%84%E6%B5%8B"><span class="toc-number">6.6.3.</span> <span class="toc-text">3. w,h预测</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E6%80%BB%E7%9A%84%E6%9D%A5%E8%AF%B4"><span class="toc-number">6.6.4.</span> <span class="toc-text"> 3.总的来说</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%BB%8F%E9%AA%8C%E6%80%BB%E7%BB%93"><span class="toc-number">7.</span> <span class="toc-text">经验总结</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%8F%AF%E8%83%BD%E4%BC%9A%E4%B8%8B%E9%87%87%E6%A0%B7"><span class="toc-number">7.1.</span> <span class="toc-text">可能会下采样</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2026/05/09/L21-%E9%83%A8%E7%BD%B2%E4%B8%8E%E5%BA%94%E7%94%A8/" title="L21-部署与应用"><img src="/img/loading.gif" data-original="https://picsum.photos/seed/deploy/800/400" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="L21-部署与应用"/></a><div class="content"><a class="title" href="/2026/05/09/L21-%E9%83%A8%E7%BD%B2%E4%B8%8E%E5%BA%94%E7%94%A8/" title="L21-部署与应用">L21-部署与应用</a><time datetime="2026-05-09T10:00:00.000Z" title="发表于 2026-05-09 18:00:00">2026-05-09</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/05/09/L20-%E6%8E%A8%E7%90%86%E4%BC%98%E5%8C%96/" title="L20-推理优化"><img src="/img/loading.gif" data-original="https://picsum.photos/seed/inference/800/400" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="L20-推理优化"/></a><div class="content"><a class="title" href="/2026/05/09/L20-%E6%8E%A8%E7%90%86%E4%BC%98%E5%8C%96/" title="L20-推理优化">L20-推理优化</a><time datetime="2026-05-09T09:30:00.000Z" title="发表于 2026-05-09 17:30:00">2026-05-09</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/05/09/L19-MoE%E6%B7%B7%E5%90%88%E4%B8%93%E5%AE%B6%E6%A8%A1%E5%9E%8B/" title="L19-MoE混合专家模型"><img src="/img/loading.gif" data-original="https://picsum.photos/seed/moe/800/400" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="L19-MoE混合专家模型"/></a><div class="content"><a class="title" href="/2026/05/09/L19-MoE%E6%B7%B7%E5%90%88%E4%B8%93%E5%AE%B6%E6%A8%A1%E5%9E%8B/" title="L19-MoE混合专家模型">L19-MoE混合专家模型</a><time datetime="2026-05-09T09:00:00.000Z" title="发表于 2026-05-09 17:00:00">2026-05-09</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2026 By XiaoYing</span></div><div class="footer_custom_text">🌸 愿所有努力，皆有回响 🌸</div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.4"></script><script src="/js/main.js?v=5.5.4"></script><div class="js-pjax"></div><script defer src="/js/cursor.js"></script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索文章" type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.4"></script></div></div><!-- hexo injector body_end start --><script data-pjax>
+  function butterfly_swiper_injector_config(){
+    var parent_div_git = document.getElementsByClassName('recent-post-items')[0];
+    var item_html = '<div class="recent-post-item" style="height: auto;width: 100%"><div class="blog-slider swiper-container-fade swiper-container-horizontal" id="swiper_container"><div class="blog-slider__wrp swiper-wrapper" style="transition-duration: 0ms;"><div class="blog-slider__item swiper-slide" style="width: 750px; opacity: 1; transform: translate3d(0px, 0px, 0px); transition-duration: 0ms;"><a class="blog-slider__img" href="2026/05/07/yolov1/" alt=""><img width="48" height="48" src="/img/loading.gif" data-original="https://picsum.photos/seed/yolo/800/400" alt="" onerror="this.src=https://unpkg.zhimg.com/akilar-candyassets/image/loading.gif; this.onerror = null;"/></a><div class="blog-slider__content"><span class="blog-slider__code">2026-05-07</span><a class="blog-slider__title" href="2026/05/07/yolov1/" alt="">YOLOv1目标检测全面总结</a><div class="blog-slider__text">YOLOv1目标检测算法全面总结，从目标检测基础到YOLO核心原理</div><a class="blog-slider__button" href="2026/05/07/yolov1/" alt="">详情   </a></div></div><div class="blog-slider__item swiper-slide" style="width: 750px; opacity: 1; transform: translate3d(0px, 0px, 0px); transition-duration: 0ms;"><a class="blog-slider__img" href="2026/05/08/cnn卷积神经网络算法原理/" alt=""><img width="48" height="48" src="/img/loading.gif" data-original="https://picsum.photos/seed/cnnnet/800/400" alt="" onerror="this.src=https://unpkg.zhimg.com/akilar-candyassets/image/loading.gif; this.onerror = null;"/></a><div class="blog-slider__content"><span class="blog-slider__code">2026-05-08</span><a class="blog-slider__title" href="2026/05/08/cnn卷积神经网络算法原理/" alt="">CNN卷积神经网络全面总结</a><div class="blog-slider__text">卷积神经网络CNN全面总结，从全连接网络到卷积运算的核心原理</div><a class="blog-slider__button" href="2026/05/08/cnn卷积神经网络算法原理/" alt="">详情   </a></div></div><div class="blog-slider__item swiper-slide" style="width: 750px; opacity: 1; transform: translate3d(0px, 0px, 0px); transition-duration: 0ms;"><a class="blog-slider__img" href="2026/05/09/L01-什么是大语言模型/" alt=""><img width="48" height="48" src="/img/loading.gif" data-original="https://picsum.photos/seed/llm/800/400" alt="" onerror="this.src=https://unpkg.zhimg.com/akilar-candyassets/image/loading.gif; this.onerror = null;"/></a><div class="blog-slider__content"><span class="blog-slider__code">2026-05-09</span><a class="blog-slider__title" href="2026/05/09/L01-什么是大语言模型/" alt="">L01-什么是大语言模型</a><div class="blog-slider__text">从文字接龙说起，理解大语言模型的核心思想与GPT发展脉络</div><a class="blog-slider__button" href="2026/05/09/L01-什么是大语言模型/" alt="">详情   </a></div></div><div class="blog-slider__item swiper-slide" style="width: 750px; opacity: 1; transform: translate3d(0px, 0px, 0px); transition-duration: 0ms;"><a class="blog-slider__img" href="2026/05/09/L02-Transformer全景图/" alt=""><img width="48" height="48" src="/img/loading.gif" data-original="https://picsum.photos/seed/transformer/800/400" alt="" onerror="this.src=https://unpkg.zhimg.com/akilar-candyassets/image/loading.gif; this.onerror = null;"/></a><div class="blog-slider__content"><span class="blog-slider__code">2026-05-09</span><a class="blog-slider__title" href="2026/05/09/L02-Transformer全景图/" alt="">L02-Transformer全景图</a><div class="blog-slider__text">深入理解Transformer架构，掌握Self-Attention与多头注意力机制</div><a class="blog-slider__button" href="2026/05/09/L02-Transformer全景图/" alt="">详情   </a></div></div><div class="blog-slider__item swiper-slide" style="width: 750px; opacity: 1; transform: translate3d(0px, 0px, 0px); transition-duration: 0ms;"><a class="blog-slider__img" href="2026/05/09/L03-PyTorch快速上手/" alt=""><img width="48" height="48" src="/img/loading.gif" data-original="https://picsum.photos/seed/pytorch/800/400" alt="" onerror="this.src=https://unpkg.zhimg.com/akilar-candyassets/image/loading.gif; this.onerror = null;"/></a><div class="blog-slider__content"><span class="blog-slider__code">2026-05-09</span><a class="blog-slider__title" href="2026/05/09/L03-PyTorch快速上手/" alt="">L03-PyTorch快速上手</a><div class="blog-slider__text">PyTorch基础入门，掌握张量运算、自动求导与神经网络搭建</div><a class="blog-slider__button" href="2026/05/09/L03-PyTorch快速上手/" alt="">详情   </a></div></div><div class="blog-slider__item swiper-slide" style="width: 750px; opacity: 1; transform: translate3d(0px, 0px, 0px); transition-duration: 0ms;"><a class="blog-slider__img" href="2026/05/09/L04-MiniMind项目导览/" alt=""><img width="48" height="48" src="/img/loading.gif" data-original="https://picsum.photos/seed/minimind/800/400" alt="" onerror="this.src=https://unpkg.zhimg.com/akilar-candyassets/image/loading.gif; this.onerror = null;"/></a><div class="blog-slider__content"><span class="blog-slider__code">2026-05-09</span><a class="blog-slider__title" href="2026/05/09/L04-MiniMind项目导览/" alt="">L04-MiniMind项目导览</a><div class="blog-slider__text">MiniMind项目导览，从零开始理解大模型训练的完整流程</div><a class="blog-slider__button" href="2026/05/09/L04-MiniMind项目导览/" alt="">详情   </a></div></div><div class="blog-slider__item swiper-slide" style="width: 750px; opacity: 1; transform: translate3d(0px, 0px, 0px); transition-duration: 0ms;"><a class="blog-slider__img" href="2026/05/09/L05-Tokenizer分词器/" alt=""><img width="48" height="48" src="/img/loading.gif" data-original="https://picsum.photos/seed/tokenizer/800/400" alt="" onerror="this.src=https://unpkg.zhimg.com/akilar-candyassets/image/loading.gif; this.onerror = null;"/></a><div class="blog-slider__content"><span class="blog-slider__code">2026-05-09</span><a class="blog-slider__title" href="2026/05/09/L05-Tokenizer分词器/" alt="">L05-Tokenizer分词器</a><div class="blog-slider__text">Tokenizer分词器原理，掌握BPE算法与词表设计的关键技术</div><a class="blog-slider__button" href="2026/05/09/L05-Tokenizer分词器/" alt="">详情   </a></div></div><div class="blog-slider__item swiper-slide" style="width: 750px; opacity: 1; transform: translate3d(0px, 0px, 0px); transition-duration: 0ms;"><a class="blog-slider__img" href="2026/05/09/L06-词嵌入Embedding/" alt=""><img width="48" height="48" src="/img/loading.gif" data-original="https://picsum.photos/seed/embedding/800/400" alt="" onerror="this.src=https://unpkg.zhimg.com/akilar-candyassets/image/loading.gif; this.onerror = null;"/></a><div class="blog-slider__content"><span class="blog-slider__code">2026-05-09</span><a class="blog-slider__title" href="2026/05/09/L06-词嵌入Embedding/" alt="">L06-词嵌入Embedding</a><div class="blog-slider__text">词嵌入Embedding详解，理解从One-Hot到稠密向量的演進</div><a class="blog-slider__button" href="2026/05/09/L06-词嵌入Embedding/" alt="">详情   </a></div></div><div class="blog-slider__item swiper-slide" style="width: 750px; opacity: 1; transform: translate3d(0px, 0px, 0px); transition-duration: 0ms;"><a class="blog-slider__img" href="2026/05/09/L07-RMSNorm归一化/" alt=""><img width="48" height="48" src="/img/loading.gif" data-original="https://picsum.photos/seed/normalization/800/400" alt="" onerror="this.src=https://unpkg.zhimg.com/akilar-candyassets/image/loading.gif; this.onerror = null;"/></a><div class="blog-slider__content"><span class="blog-slider__code">2026-05-09</span><a class="blog-slider__title" href="2026/05/09/L07-RMSNorm归一化/" alt="">L07-RMSNorm归一化</a><div class="blog-slider__text">RMSNorm归一化原理，理解深度网络训练稳定的关键技术</div><a class="blog-slider__button" href="2026/05/09/L07-RMSNorm归一化/" alt="">详情   </a></div></div><div class="blog-slider__item swiper-slide" style="width: 750px; opacity: 1; transform: translate3d(0px, 0px, 0px); transition-duration: 0ms;"><a class="blog-slider__img" href="2026/05/09/L08-RoPE旋转位置编码/" alt=""><img width="48" height="48" src="/img/loading.gif" data-original="https://picsum.photos/seed/rope/800/400" alt="" onerror="this.src=https://unpkg.zhimg.com/akilar-candyassets/image/loading.gif; this.onerror = null;"/></a><div class="blog-slider__content"><span class="blog-slider__code">2026-05-09</span><a class="blog-slider__title" href="2026/05/09/L08-RoPE旋转位置编码/" alt="">L08-RoPE旋转位置编码</a><div class="blog-slider__text">RoPE旋转位置编码，让模型理解序列中token的位置信息</div><a class="blog-slider__button" href="2026/05/09/L08-RoPE旋转位置编码/" alt="">详情   </a></div></div><div class="blog-slider__item swiper-slide" style="width: 750px; opacity: 1; transform: translate3d(0px, 0px, 0px); transition-duration: 0ms;"><a class="blog-slider__img" href="2026/05/09/L09-注意力机制与GQA/" alt=""><img width="48" height="48" src="/img/loading.gif" data-original="https://picsum.photos/seed/attention/800/400" alt="" onerror="this.src=https://unpkg.zhimg.com/akilar-candyassets/image/loading.gif; this.onerror = null;"/></a><div class="blog-slider__content"><span class="blog-slider__code">2026-05-09</span><a class="blog-slider__title" href="2026/05/09/L09-注意力机制与GQA/" alt="">L09-注意力机制与GQA</a><div class="blog-slider__text">注意力机制与GQA，深入理解QKV计算与分组查询注意力</div><a class="blog-slider__button" href="2026/05/09/L09-注意力机制与GQA/" alt="">详情   </a></div></div><div class="blog-slider__item swiper-slide" style="width: 750px; opacity: 1; transform: translate3d(0px, 0px, 0px); transition-duration: 0ms;"><a class="blog-slider__img" href="2026/05/09/L10-前馈网络与SwiGLU/" alt=""><img width="48" height="48" src="/img/loading.gif" data-original="https://picsum.photos/seed/ffn/800/400" alt="" onerror="this.src=https://unpkg.zhimg.com/akilar-candyassets/image/loading.gif; this.onerror = null;"/></a><div class="blog-slider__content"><span class="blog-slider__code">2026-05-09</span><a class="blog-slider__title" href="2026/05/09/L10-前馈网络与SwiGLU/" alt="">L10-前馈网络与SwiGLU</a><div class="blog-slider__text">前馈网络与SwiGLU，理解FFN层与门控激活函数的设计</div><a class="blog-slider__button" href="2026/05/09/L10-前馈网络与SwiGLU/" alt="">详情   </a></div></div><div class="blog-slider__item swiper-slide" style="width: 750px; opacity: 1; transform: translate3d(0px, 0px, 0px); transition-duration: 0ms;"><a class="blog-slider__img" href="2026/05/09/L12-预训练Pretrain/" alt=""><img width="48" height="48" src="/img/loading.gif" data-original="https://picsum.photos/seed/pretrain/800/400" alt="" onerror="this.src=https://unpkg.zhimg.com/akilar-candyassets/image/loading.gif; this.onerror = null;"/></a><div class="blog-slider__content"><span class="blog-slider__code">2026-05-09</span><a class="blog-slider__title" href="2026/05/09/L12-预训练Pretrain/" alt="">L12-预训练Pretrain</a><div class="blog-slider__text">预训练Pretrain，理解大规模语言模型从零开始的训练过程</div><a class="blog-slider__button" href="2026/05/09/L12-预训练Pretrain/" alt="">详情   </a></div></div><div class="blog-slider__item swiper-slide" style="width: 750px; opacity: 1; transform: translate3d(0px, 0px, 0px); transition-duration: 0ms;"><a class="blog-slider__img" href="2026/05/09/L13-监督微调SFT/" alt=""><img width="48" height="48" src="/img/loading.gif" data-original="https://picsum.photos/seed/sft/800/400" alt="" onerror="this.src=https://unpkg.zhimg.com/akilar-candyassets/image/loading.gif; this.onerror = null;"/></a><div class="blog-slider__content"><span class="blog-slider__code">2026-05-09</span><a class="blog-slider__title" href="2026/05/09/L13-监督微调SFT/" alt="">L13-监督微调SFT</a><div class="blog-slider__text">监督微调SFT，掌握指令微调与对话模型训练的核心技术</div><a class="blog-slider__button" href="2026/05/09/L13-监督微调SFT/" alt="">详情   </a></div></div><div class="blog-slider__item swiper-slide" style="width: 750px; opacity: 1; transform: translate3d(0px, 0px, 0px); transition-duration: 0ms;"><a class="blog-slider__img" href="2026/05/09/L14-LoRA高效微调/" alt=""><img width="48" height="48" src="/img/loading.gif" data-original="https://picsum.photos/seed/lora/800/400" alt="" onerror="this.src=https://unpkg.zhimg.com/akilar-candyassets/image/loading.gif; this.onerror = null;"/></a><div class="blog-slider__content"><span class="blog-slider__code">2026-05-09</span><a class="blog-slider__title" href="2026/05/09/L14-LoRA高效微调/" alt="">L14-LoRA高效微调</a><div class="blog-slider__text">LoRA高效微调，理解参数高效微调的核心原理与应用</div><a class="blog-slider__button" href="2026/05/09/L14-LoRA高效微调/" alt="">详情   </a></div></div><div class="blog-slider__item swiper-slide" style="width: 750px; opacity: 1; transform: translate3d(0px, 0px, 0px); transition-duration: 0ms;"><a class="blog-slider__img" href="2026/05/09/L15-知识蒸馏/" alt=""><img width="48" height="48" src="/img/loading.gif" data-original="https://picsum.photos/seed/distill/800/400" alt="" onerror="this.src=https://unpkg.zhimg.com/akilar-candyassets/image/loading.gif; this.onerror = null;"/></a><div class="blog-slider__content"><span class="blog-slider__code">2026-05-09</span><a class="blog-slider__title" href="2026/05/09/L15-知识蒸馏/" alt="">L15-知识蒸馏</a><div class="blog-slider__text">知识蒸馏，学习大模型压缩与知识迁移的核心技术</div><a class="blog-slider__button" href="2026/05/09/L15-知识蒸馏/" alt="">详情   </a></div></div><div class="blog-slider__item swiper-slide" style="width: 750px; opacity: 1; transform: translate3d(0px, 0px, 0px); transition-duration: 0ms;"><a class="blog-slider__img" href="2026/05/09/L16-完整模型组装/" alt=""><img width="48" height="48" src="/img/loading.gif" data-original="https://picsum.photos/seed/model/800/400" alt="" onerror="this.src=https://unpkg.zhimg.com/akilar-candyassets/image/loading.gif; this.onerror = null;"/></a><div class="blog-slider__content"><span class="blog-slider__code">2026-05-09</span><a class="blog-slider__title" href="2026/05/09/L16-完整模型组装/" alt="">L16-完整模型组装</a><div class="blog-slider__text">完整模型组装，从零构建一个完整的语言模型全过程</div><a class="blog-slider__button" href="2026/05/09/L16-完整模型组装/" alt="">详情   </a></div></div><div class="blog-slider__item swiper-slide" style="width: 750px; opacity: 1; transform: translate3d(0px, 0px, 0px); transition-duration: 0ms;"><a class="blog-slider__img" href="2026/05/09/L17-DPO偏好优化/" alt=""><img width="48" height="48" src="/img/loading.gif" data-original="https://picsum.photos/seed/dpo/800/400" alt="" onerror="this.src=https://unpkg.zhimg.com/akilar-candyassets/image/loading.gif; this.onerror = null;"/></a><div class="blog-slider__content"><span class="blog-slider__code">2026-05-09</span><a class="blog-slider__title" href="2026/05/09/L17-DPO偏好优化/" alt="">L17-DPO偏好优化</a><div class="blog-slider__text">DPO偏好优化，理解直接偏好优化算法与人类对齐技术</div><a class="blog-slider__button" href="2026/05/09/L17-DPO偏好优化/" alt="">详情   </a></div></div><div class="blog-slider__item swiper-slide" style="width: 750px; opacity: 1; transform: translate3d(0px, 0px, 0px); transition-duration: 0ms;"><a class="blog-slider__img" href="2026/05/09/L18-PPO与GRPO强化学习/" alt=""><img width="48" height="48" src="/img/loading.gif" data-original="https://picsum.photos/seed/reinforcement/800/400" alt="" onerror="this.src=https://unpkg.zhimg.com/akilar-candyassets/image/loading.gif; this.onerror = null;"/></a><div class="blog-slider__content"><span class="blog-slider__code">2026-05-09</span><a class="blog-slider__title" href="2026/05/09/L18-PPO与GRPO强化学习/" alt="">L18-PPO与GRPO强化学习</a><div class="blog-slider__text">PPO与GRPO强化学习，掌握强化学习在LLM中的对齐应用</div><a class="blog-slider__button" href="2026/05/09/L18-PPO与GRPO强化学习/" alt="">详情   </a></div></div><div class="blog-slider__item swiper-slide" style="width: 750px; opacity: 1; transform: translate3d(0px, 0px, 0px); transition-duration: 0ms;"><a class="blog-slider__img" href="2026/05/09/L19-MoE混合专家模型/" alt=""><img width="48" height="48" src="/img/loading.gif" data-original="https://picsum.photos/seed/moe/800/400" alt="" onerror="this.src=https://unpkg.zhimg.com/akilar-candyassets/image/loading.gif; this.onerror = null;"/></a><div class="blog-slider__content"><span class="blog-slider__code">2026-05-09</span><a class="blog-slider__title" href="2026/05/09/L19-MoE混合专家模型/" alt="">L19-MoE混合专家模型</a><div class="blog-slider__text">MoE混合专家模型，理解稀疏门控专家混合架构的设计</div><a class="blog-slider__button" href="2026/05/09/L19-MoE混合专家模型/" alt="">详情   </a></div></div><div class="blog-slider__item swiper-slide" style="width: 750px; opacity: 1; transform: translate3d(0px, 0px, 0px); transition-duration: 0ms;"><a class="blog-slider__img" href="2026/05/09/L20-推理优化/" alt=""><img width="48" height="48" src="/img/loading.gif" data-original="https://picsum.photos/seed/inference/800/400" alt="" onerror="this.src=https://unpkg.zhimg.com/akilar-candyassets/image/loading.gif; this.onerror = null;"/></a><div class="blog-slider__content"><span class="blog-slider__code">2026-05-09</span><a class="blog-slider__title" href="2026/05/09/L20-推理优化/" alt="">L20-推理优化</a><div class="blog-slider__text">推理优化，掌握模型推理加速与内存优化的关键技术</div><a class="blog-slider__button" href="2026/05/09/L20-推理优化/" alt="">详情   </a></div></div><div class="blog-slider__item swiper-slide" style="width: 750px; opacity: 1; transform: translate3d(0px, 0px, 0px); transition-duration: 0ms;"><a class="blog-slider__img" href="2026/05/09/L21-部署与应用/" alt=""><img width="48" height="48" src="/img/loading.gif" data-original="https://picsum.photos/seed/deploy/800/400" alt="" onerror="this.src=https://unpkg.zhimg.com/akilar-candyassets/image/loading.gif; this.onerror = null;"/></a><div class="blog-slider__content"><span class="blog-slider__code">2026-05-09</span><a class="blog-slider__title" href="2026/05/09/L21-部署与应用/" alt="">L21-部署与应用</a><div class="blog-slider__text">部署与应用，学习模型部署与工程化实践的完整流程</div><a class="blog-slider__button" href="2026/05/09/L21-部署与应用/" alt="">详情   </a></div></div></div><div class="blog-slider__pagination swiper-pagination-clickable swiper-pagination-bullets"></div></div></div>';
+    console.log('已挂载butterfly_swiper')
+    parent_div_git.insertAdjacentHTML("afterbegin",item_html)
+    }
+  var elist = 'undefined'.split(',');
+  var cpage = location.pathname;
+  var epage = '/';
+  var flag = 0;
+
+  for (var i=0;i<elist.length;i++){
+    if (cpage.includes(elist[i])){
+      flag++;
+    }
+  }
+
+  if ((epage ==='all')&&(flag == 0)){
+    butterfly_swiper_injector_config();
+  }
+  else if (epage === cpage){
+    butterfly_swiper_injector_config();
+  }
+  </script><script defer src="https://cdn.jsdelivr.net/npm/hexo-butterfly-swiper/lib/swiper.min.js"></script><script defer data-pjax src="https://cdn.jsdelivr.net/npm/hexo-butterfly-swiper/lib/swiper_init.js"></script><!-- hexo injector body_end end -->
+        <style>
+            [bg-lazy] {
+                background-image: none !important;
+                background-color: #eee !important;
+            }
+        </style>
+        <script>
+            window.imageLazyLoadSetting = {
+                isSPA: false,
+                preloadRatio: 1,
+                processImages: null,
+            };
+        </script><script>window.addEventListener("load",function(){var t=/\.(gif|jpg|jpeg|tiff|png)$/i,r=/^data:image\/[a-z\d\-\.\+]+;base64,/;Array.prototype.slice.call(document.querySelectorAll("img[data-original]")).forEach(function(a){var e=a.parentNode;"A"===e.tagName&&(t.test(e.href)||r.test(e.href))&&(e.href=a.dataset.original)})});</script><script>(r=>{r.imageLazyLoadSetting.processImages=t;var a=r.imageLazyLoadSetting.isSPA,o=r.imageLazyLoadSetting.preloadRatio||1,d=i();function i(){var t=Array.prototype.slice.call(document.querySelectorAll("img[data-original]")),e=Array.prototype.slice.call(document.querySelectorAll("[bg-lazy]"));return t.concat(e)}function t(t){(a||t)&&(d=i());for(var e,n=0;n<d.length;n++)0<=(e=(e=d[n]).getBoundingClientRect()).bottom&&0<=e.left&&e.top<=(r.innerHeight*o||document.documentElement.clientHeight*o)&&(()=>{var t,e,a,o,i=d[n];e=function(){d=d.filter(function(t){return i!==t}),r.imageLazyLoadSetting.onImageLoaded&&r.imageLazyLoadSetting.onImageLoaded(i)},(t=i).dataset.loaded||(t.hasAttribute("bg-lazy")?(t.removeAttribute("bg-lazy"),e&&e()):(a=new Image,o=t.getAttribute("data-original"),a.onload=function(){t.src=o,t.removeAttribute("data-original"),t.setAttribute("data-loaded",!0),e&&e()},a.onerror=function(){t.removeAttribute("data-original"),t.setAttribute("data-loaded",!1),t.src=o},t.src!==o&&(a.src=o)))})()}function e(){clearTimeout(t.tId),t.tId=setTimeout(t,500)}t(),document.addEventListener("scroll",e),r.addEventListener("resize",e),r.addEventListener("orientationchange",e)})(this);</script><script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"log":false,"pluginJsPath":"lib/","pluginModelPath":"assets/","pluginRootPath":"live2dw/","tagMode":false});</script></body></html>
