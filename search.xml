@@ -4,35 +4,6 @@
   
     
     <entry>
-      <title>我的第一篇Hexo博客</title>
-      <link href="/2026/05/09/hello-world/"/>
-      <url>/2026/05/09/hello-world/</url>
-      
-        <content type="html"><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p><h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><pre><code class="highlight bash">$ hexo new <span class="string">&quot;My New Post&quot;</span></code></pre><p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p><h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><pre><code class="highlight bash">$ hexo server</code></pre><p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p><h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><pre><code class="highlight bash">$ hexo generate</code></pre><p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p><h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><pre><code class="highlight bash">$ hexo deploy</code></pre><p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>]]></content>
-      
-      
-      <categories>
-          
-          <category> Hexo入门教程 </category>
-          
-      </categories>
-      
-      
-        <tags>
-            
-            <tag> Hexo </tag>
-            
-            <tag> 教程 </tag>
-            
-            <tag> 踩坑记录 </tag>
-            
-        </tags>
-      
-    </entry>
-    
-    
-    
-    <entry>
       <title>L21-部署与应用</title>
       <link href="/2026/05/09/L21-%E9%83%A8%E7%BD%B2%E4%B8%8E%E5%BA%94%E7%94%A8/"/>
       <url>/2026/05/09/L21-%E9%83%A8%E7%BD%B2%E4%B8%8E%E5%BA%94%E7%94%A8/</url>
@@ -606,6 +577,35 @@
             <tag> 大语言模型 </tag>
             
             <tag> 学习笔记 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>CNN卷积神经网络全面总结</title>
+      <link href="/2026/05/08/cnn%E5%8D%B7%E7%A7%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C/"/>
+      <url>/2026/05/08/cnn%E5%8D%B7%E7%A7%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C/</url>
+      
+        <content type="html"><![CDATA[<h2 id="一、总结"><a href="#一、总结" class="headerlink" title="一、总结"></a>一、总结</h2><p>本文围绕卷积神经网络（CNN） 展开，先讲解全连接神经网络的结构、激活函数（Sigmoid&#x2F;Tanh&#x2F;ReLU&#x2F;Leaky ReLU）、前向传播、损失函数、梯度下降与反向传播的完整计算流程，再指出全连接网络处理图像的缺陷，进而介绍卷积运算、填充、步幅、多通道卷积、池化层的核心原理与尺寸计算公式，最终梳理出CNN 标准结构：输入层→卷积层→池化层→全连接层→输出层。</p><h2 id="二、思维导图"><a href="#二、思维导图" class="headerlink" title="二、思维导图"></a>二、思维导图</h2><h2 id="三、详细总结"><a href="#三、详细总结" class="headerlink" title="三、详细总结"></a>三、详细总结</h2><h3 id="3-1-全连接神经网络基础"><a href="#3-1-全连接神经网络基础" class="headerlink" title="3.1 全连接神经网络基础"></a>3.1 全连接神经网络基础</h3><h4 id="3-1-1整体结构与单元"><a href="#3-1-1整体结构与单元" class="headerlink" title="3.1.1整体结构与单元"></a>3.1.1整体结构与单元</h4><p>结构：输入层→隐藏层→输出层，层间神经元（ 从基础单元到整体结构 ）全连接<br>神经元数学表达式：a&#x3D;h(w*x+b) 【对输入做线性变换 + 非线性激活，是所有层的基础。 】<br>激活函数作用：打破线性组合，让网络可拟合复杂规律</p><h4 id="3-1-2常用激活函数对比（图-公式-导数）【神经网络非线性的关键】"><a href="#3-1-2常用激活函数对比（图-公式-导数）【神经网络非线性的关键】" class="headerlink" title="3.1.2常用激活函数对比（图+公式+导数）【神经网络非线性的关键】"></a>3.1.2常用激活函数对比（图+公式+导数）【神经网络非线性的关键】</h4><p>加入激活函数的原因：若是考虑把线性函数ℎ(𝑥) &#x3D; 𝑐𝑥作为激活函数，把𝑦(𝑥) &#x3D; ℎ(ℎ(ℎ(𝑥)))的运算对应3层神经网络，这个运算会进行𝑦(𝑥) &#x3D; 𝑐 ∗ 𝑐 ∗ 𝑐 ∗ 𝑥的乘法运算，但是同样的处理可以由𝑦(𝑥) &#x3D; 𝑎𝑥（注意，这里𝑎 &#x3D; 𝑐 ∗∗ 3）一次乘法运算（既没有隐藏层的神经网络）来表示</p><table><thead><tr><th>激活函数</th><th>公式</th><th>优点</th><th>缺点</th></tr></thead><tbody><tr><td>Sigmoid</td><td></td><td>简单，适合分类</td><td>梯度消失、输出非 0 对称</td></tr><tr><td>Tanh</td><td></td><td>0 对称、收敛更快</td><td>仍有梯度消失</td></tr><tr><td>ReLU</td><td></td><td>无梯度消失、计算快</td><td>神经元死亡</td></tr><tr><td>Leaky ReLU</td><td></td><td>解决神经元死亡</td><td>正负区间预测不一致</td></tr></tbody></table><h4 id="3-1-3训练核心流程"><a href="#3-1-3训练核心流程" class="headerlink" title="3.1.3训练核心流程"></a>3.1.3训练核心流程</h4><p><strong>a. 前向传播：</strong> 逐层计算神经元输出，得到预测值 y，上一层的输出作为下一层的输入</p><p><strong>b. 损失函数：</strong><br>回归问题（输出值是连续值）中：</p><p>分类问题（输出值是离散值）中：</p><p><strong>c. 反向传播：</strong> 链式法则求梯度<br>对损失函数利用链式法则求梯度，逐步更新参数（w,b）使得最终的损失函数最小，而不是使得参数最小</p><p>梯度下降：参数更新<br>a是学习率，既不能太大也不能太小</p><p>反向传播（链式求导法则求梯度，其实也就是一步一步求）<br>以回归问题均方误差为例：</p><p>求解参数梯度</p><p>利用梯度参数更新</p><p>新参数前向传播</p><p><strong>d.</strong> 重复执行以上步骤更新参数直到训练能够结束，也就是损失函数小到能够接受的范围<br><strong>e.</strong> 产生model</p><h3 id="3-2-图像与全连接网络缺陷"><a href="#3-2-图像与全连接网络缺陷" class="headerlink" title="3.2 图像与全连接网络缺陷"></a>3.2 图像与全连接网络缺陷</h3><ol><li><p>图像本质：计算机中为数值矩阵，彩色图为 R&#x2F;G&#x2F;B 三通道矩阵，灰度图片是单通道</p></li><li><p>全连接缺陷：处理图像时会将图像展成一维向量，会丢失空间结构；同时参数量爆炸</p></li></ol><h3 id="3-3-卷积神经网络"><a href="#3-3-卷积神经网络" class="headerlink" title="3.3. 卷积神经网络"></a>3.3. 卷积神经网络</h3><p>总的来说有卷积运算的就是卷积神经网络，一般流程是输入层→卷积层→池化层（卷积和池化可重复堆叠）→全连接层→输出层，而在卷积和池化操作的过程中一般都是通过卷积核增加通道数，池化减小像素度</p><p>输入图像把图片变成数字矩阵（灰度图 &#x2F; 彩色三通道）。<br>卷积层（提取特征）用卷积核滑动计算，提取边缘、纹理、形状等特征，输出特征图。<br>非线性激活加入 ReLU 等激活，让网络能学复杂规律。<br>池化层（下采样）压缩特征图尺寸，减少计算量，保留关键特征。<br>重复卷积 + 激活 + 池化层层提取更高级的特征（从局部→整体）。<br>展平（Flatten）把二维特征图拉成一维向量。<br>全连接层对高级特征做分类 &#x2F; 回归判断。<br>输出层用线性 &#x2F; Softmax 输出最终结果（分类概率 &#x2F; 坐标值）。</p><h4 id="3-3-1卷积层"><a href="#3-3-1卷积层" class="headerlink" title="3.3.1卷积层"></a>3.3.1卷积层</h4><p><strong>1.基础运算</strong><br>卷积运算：卷积核与输入区域逐元素相乘再求和<br>带偏置卷积：卷积结果 + 偏置值得到最终输出</p><p><strong>2.关键参数与尺寸计算</strong><br>填充（P）：边缘补 0，控制输出尺寸<br>步幅（S）：步长<br>输出尺寸公式：</p><p>案例：H&#x3D;3、P&#x3D;1、FH&#x3D;2、S&#x3D;1 → OH&#x3D;4</p><p><strong>3.多通道卷积</strong><br>输入通道数 &#x3D; 卷积核通道数，逐通道卷积后求和得到输出特征图，最终特征图的通道数取决于卷积核的个数</p><h4 id="3-3-2-池化层核心原理"><a href="#3-3-2-池化层核心原理" class="headerlink" title="3.3.2 池化层核心原理"></a>3.3.2 池化层核心原理</h4><p>作用：减小像素度、保留关键特征、减少计算量，不会使通道数改变<br>类型：<br>最大池化：取区域内最大值<br>平均池化：取区域内平均值</p><p>尺寸公式：与卷积层完全一致</p><h2 id="四、关键问题与答案"><a href="#四、关键问题与答案" class="headerlink" title="四、关键问题与答案"></a>四、关键问题与答案</h2><p><strong>问题1：</strong> 回归问题计算损失函数用的均方误差为什么要除以2<br>方便求导</p><p><strong>问题2：</strong> 为什么要进行非线性激活，线性激活什么时候用<br>线性激活：恒等变换，y&#x3D;x，输出什么就返回什么，作用就是输出连续，无范围限制的真是数值，比如坐标、距离、角度、预测值等<br>例如在YOLO 最后一层用的就是线性激活（恒等映射、不做非线性压缩）。</p><p>非线性激活：<br>如果只用线性激活，无论网络多少层，最终都等价于一层线性变换，只能拟合直线 &#x2F; 平面，学不到图像、语音里复杂的非线性规律。非线性激活才能让网络具备深层拟合能力。</p><p><strong>问题3：</strong> 卷积输出特征图的尺寸由哪些参数决定？计算公式是什么？<br>由输入尺寸 (H&#x2F;W)、填充 (P)、卷积核尺寸 (FH&#x2F;FW)、步幅 (S) 决定</p><p><strong>问题4：</strong> CNN 相比全连接网络更适合处理图像的核心优势是什么？<br>CNN 通过卷积提取空间特征、池化降维，大幅减少参数量，同时保留图像的空间位置信息，适配图像数据特性。</p><h2 id="五、经验"><a href="#五、经验" class="headerlink" title="五、经验"></a>五、经验</h2><p>必须记住</p>]]></content>
+      
+      
+      <categories>
+          
+          <category> 深度学习 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> CNN </tag>
+            
+            <tag> 卷积神经网络 </tag>
+            
+            <tag> 深度学习 </tag>
             
         </tags>
       
