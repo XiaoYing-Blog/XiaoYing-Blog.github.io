@@ -34,3 +34,33 @@
         -ms-transform: scale(0.5);
         -o-transform: scale(0.5);
     }
+
+/* ��ҳ�ö����ർ�� */
+.recent-post-items {
+    margin-top: 0 !important;
+}
+
+.category-nav {
+    display: flex !important;
+    gap: 12px !important;
+    overflow-x: auto !important;
+    padding: 10px 0 15px 0 !important;
+    margin: 0 0 15px 0 !important;
+    scrollbar-width: none !important;
+}
+
+    .category-nav::-webkit-scrollbar {
+        display: none !important;
+    }
+
+.category-item {
+    padding: 10px 18px !important;
+    background: #ffffff !important;
+    border-radius: 12px !important;
+    white-space: nowrap !important;
+    text-decoration: none !important;
+    color: #333 !important;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05) !important;
+    flex-shrink: 0 !important;
+    border: none !important;
+}
