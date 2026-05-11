@@ -601,11 +601,11 @@
       
         <tags>
             
-            <tag> 深度学习 </tag>
-            
             <tag> CNN </tag>
             
             <tag> 卷积神经网络 </tag>
+            
+            <tag> 深度学习 </tag>
             
         </tags>
       
@@ -630,11 +630,11 @@
       
         <tags>
             
+            <tag> 深度学习 </tag>
+            
             <tag> YOLO </tag>
             
             <tag> 目标检测 </tag>
-            
-            <tag> 深度学习 </tag>
             
         </tags>
       
