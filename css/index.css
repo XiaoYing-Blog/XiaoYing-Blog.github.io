@@ -2129,6 +2129,7 @@ figure.highlight pre .javascript .function {
   background: var(--hltools-bg);
   color: var(--hltools-color);
   font-size: 14px;
+  margin-right: auto;
 }
 .container .highlight-tools > * {
   -webkit-box-flex: 1;
@@ -2204,9 +2205,6 @@ figure.highlight pre .javascript .function {
   -ms-user-select: none;
   user-select: none;
   -webkit-user-select: none;
-}
-.container .highlight-tools > :nth-child(2) {
-  margin-right: auto;
 }
 .container .gutter {
   -webkit-user-select: none;

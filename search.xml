@@ -547,9 +547,9 @@
       
         <tags>
             
-            <tag> 学习笔记 </tag>
-            
             <tag> Transformer </tag>
+            
+            <tag> 学习笔记 </tag>
             
         </tags>
       
@@ -574,9 +574,9 @@
       
         <tags>
             
-            <tag> 大语言模型 </tag>
-            
             <tag> 学习笔记 </tag>
+            
+            <tag> 大语言模型 </tag>
             
         </tags>
       
@@ -601,11 +601,11 @@
       
         <tags>
             
+            <tag> 深度学习 </tag>
+            
             <tag> CNN </tag>
             
             <tag> 卷积神经网络 </tag>
-            
-            <tag> 深度学习 </tag>
             
         </tags>
       
@@ -630,11 +630,11 @@
       
         <tags>
             
-            <tag> 深度学习 </tag>
-            
             <tag> YOLO </tag>
             
             <tag> 目标检测 </tag>
+            
+            <tag> 深度学习 </tag>
             
         </tags>
       
